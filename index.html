@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d6b70">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fish Books">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Fish Import Books</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}img{max-width:100%}
+/* Layout: a working ledger app. Top bar with tabs, one column of panels, tables scroll inside their own frames. Cold-chain palette: ink on ice. */
+:root{
+  --bg:#eef3f4; --panel:#ffffff; --ink:#11252c; --muted:#5a6f76; --line:#d5e0e3; --soft:#e4eced;
+  --accent:#0d6b70; --accent-ink:#ffffff; --gain:#2c7a4b; --loss:#b3261e; --warn:#a8620f; --warn-bg:#fbf1e2;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1719; --panel:#122125; --ink:#e3eef0; --muted:#93a9ae; --line:#24393e; --soft:#1a2c30;
+  --accent:#4fb3b5; --accent-ink:#06191b; --gain:#6cc28f; --loss:#f08a80; --warn:#e8a74f; --warn-bg:#2a2212; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1719; --panel:#122125; --ink:#e3eef0; --muted:#93a9ae; --line:#24393e; --soft:#1a2c30;
+  --accent:#4fb3b5; --accent-ink:#06191b; --gain:#6cc28f; --loss:#f08a80; --warn:#e8a74f; --warn-bg:#2a2212; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:22px 14px}
+.brand h1{font-family:var(--f-display);font-stretch:80%;font-weight:800;font-size:28px;letter-spacing:.01em;margin:0;line-height:1.05}
+.brand p{margin:4px 0 0;color:var(--muted)}
+.status{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.status.live{color:var(--gain);border-color:currentColor}
+.status.demo{color:var(--warn);border-color:currentColor}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:20px}
+nav.tabs button{font:600 14px var(--f-body);background:none;border:0;color:var(--muted);padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav.tabs button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;gap:16px}
+.cols-2{grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr))}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.panel h2{font-family:var(--f-display);font-stretch:85%;font-weight:700;font-size:18px;margin:0 0 4px;text-wrap:balance}
+.panel .sub{color:var(--muted);margin:0 0 14px;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.kpi{background:var(--panel);padding:14px 16px}
+.kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.kpi .v{font-family:var(--f-num);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .n{font-size:12px;color:var(--muted)}
+.pos{color:var(--gain)} .neg{color:var(--loss)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;background:var(--soft)}
+tr.jfirst td{border-top:1px solid var(--line)}
+td.n,th.n{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+tr.tot td{font-weight:600;background:var(--soft)}
+.chip{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid currentColor}
+.chip.warn{color:var(--warn)} .chip.ok{color:var(--gain)} .chip.bad{color:var(--loss)}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.checks li{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:10px 12px;border-radius:8px;background:var(--warn-bg);align-items:start}
+.checks li.info{background:var(--soft)}
+.checks .dot{width:8px;height:8px;border-radius:50%;background:var(--warn);margin-top:6px}
+.checks li.info .dot{background:var(--accent)}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:minmax(0,130px) 1fr 92px;gap:10px;align-items:center;font-size:13px}
+.bar .track{position:relative;height:16px;background:var(--soft);border-radius:3px}
+.bar .zero{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--muted)}
+.bar .fill{position:absolute;top:0;bottom:0;border-radius:2px}
+.bar .val{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.bar .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stmt{width:100%}
+.stmt td{white-space:normal}
+.stmt .h td{font-weight:700;padding-top:14px;border-bottom:0;font-family:var(--f-display);font-stretch:85%;font-size:15px}
+.stmt .ind td:first-child{padding-left:24px}
+.stmt .grand td{font-weight:700;border-top:2px solid var(--ink)}
+form.entry{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px;align-items:end}
+label{display:grid;gap:4px;font-size:12px;color:var(--muted);font-weight:500}
+input,select{font:14px var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+button.btn{font:600 13px var(--f-body);background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:9px 14px;cursor:pointer}
+button.ghost{font:500 12px var(--f-body);background:none;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:4px 9px;cursor:pointer}
+button.ghost:hover{color:var(--ink)}
+button.link{background:none;border:0;color:var(--accent);font:600 13px var(--f-body);cursor:pointer;padding:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.lines{display:grid;gap:8px;margin:10px 0}
+.line{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr)) auto;gap:8px;align-items:end}
+@media (max-width:620px){.line{grid-template-columns:1fr 1fr}.line label:first-child{grid-column:1/-1}}
+.note{font-size:12px;color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+details.inv summary{cursor:pointer;list-style:none}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:12px;margin-bottom:14px}
+.facts div{font-size:12px;color:var(--muted)} .facts b{display:block;font-family:var(--f-num);font-weight:500;font-size:15px;color:var(--ink)}
+
+.badge{display:inline-block;min-width:18px;padding:0 6px;border-radius:9px;background:var(--loss);color:#fff;font-size:11px;line-height:18px;margin-left:4px}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font:500 13px var(--f-body);background:none;border:0;color:var(--muted);padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.issues{display:grid;gap:12px;margin-top:16px}
+.issue{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:10px;padding:14px 16px;min-width:0}
+.issue.sev-fix{border-left-color:var(--loss)} .issue.sev-info{border-left-color:var(--accent)} .issue.done{opacity:.7;border-left-color:var(--gain)}
+.issue h3{font-family:var(--f-display);font-stretch:85%;font-size:16px;margin:8px 0 4px;text-wrap:balance}
+.issue p{margin:0 0 8px;max-width:75ch}
+.facts2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:6px 14px;margin:6px 0 0}
+.facts2 div{min-width:0} .facts2 dt{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)} .facts2 dd{margin:0;font-family:var(--f-num);font-size:13px;overflow-wrap:anywhere}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pill{font:500 12px var(--f-num);border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;padding:2px 9px;cursor:pointer}
+.pill:hover{border-color:var(--accent)}
+.fixrow{display:inline-flex;gap:6px;align-items:center} .fixrow input{width:120px}
+code{font-family:var(--f-num);font-size:12px;color:var(--muted)}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+tr.sel td{background:var(--soft)}
+.invsheet{border-top:3px solid var(--accent)}
+.userbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
+.gate{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.gatebox{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;display:grid;gap:12px}
+.gatebox h1{font-family:var(--f-display);font-stretch:80%;font-weight:800;font-size:28px;margin:0}
+.gform{display:grid;gap:12px}.gform .row{margin-top:4px}
+.gatemsg{background:var(--warn-bg);color:var(--ink);padding:10px 12px;border-radius:8px;margin:0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px;z-index:20}
+.modalbox{width:100%;max-width:640px;max-height:90vh;overflow:auto}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+
+<div id="gate" class="gate" hidden>
+  <div class="gatebox">
+    <h1>Fish Import Books</h1><p class="note">Containers in, invoices out, accounts that add up.</p>
+    <p id="gateMsg" class="gatemsg" hidden></p>
+    <form id="signinForm" data-view="signin" class="gform"><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><button class="btn">Sign in</button>
+      <div class="row"><button type="button" class="link" data-gate-view="signup">Create an account</button><button type="button" class="link" data-gate-view="reset">Forgot password?</button></div></form>
+    <form id="signupForm" data-view="signup" class="gform" hidden><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Password (8+ characters)<input name="password" type="password" minlength="8" autocomplete="new-password" required></label><button class="btn">Create account</button>
+      <p class="note">If someone invited you, use the same email they invited.</p><button type="button" class="link" data-gate-view="signin">I already have an account</button></form>
+    <form id="resetForm" data-view="reset" class="gform" hidden><label>Email<input name="email" type="email" required></label><button class="btn">Send reset link</button><button type="button" class="link" data-gate-view="signin">Back to sign in</button></form>
+    <form id="newpassForm" data-view="newpass" class="gform" hidden><label>New password<input name="password" type="password" minlength="8" autocomplete="new-password" required></label><button class="btn">Save password</button></form>
+    <form id="neworgForm" data-view="neworg" class="gform" hidden><p>Name your business to create its books. To join someone else's books instead, ask them to invite your email.</p><label>Business name<input name="org" required placeholder="Atlal Al Khadra"></label><button class="btn">Create business</button></form>
+  </div>
+</div>
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Fish Import Books</h1>
+      <p>Containers in, invoices out, accounts that add up. Amounts in OMR.</p>
+    </div>
+    <div class="userbar"><span id="status" class="status">Connecting…</span>
+      <select id="orgPick" hidden aria-label="Switch business"></select>
+      <span id="me" class="note"></span>
+      <button class="ghost" id="teamBtn" hidden>Team</button>
+      <button class="ghost" id="backupBtn">Backup</button>
+      <button class="ghost" id="signOut">Sign out</button></div>
+  </header>
+  <section class="panel" id="starter" hidden style="margin-bottom:16px"><h2>Your books are empty</h2><p class="sub">Start with the Container 1 and Container 2 records (checked invoices, the Excel and container reports for the rest, and the container costs), or start from a blank slate.</p>
+    <div class="row" style="justify-content:flex-start;gap:8px"><button class="btn" id="starterGo">Load Containers 1 and 2</button><button class="ghost" id="starterNo">Start empty</button></div></section>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button role="tab" data-tab="shipments" aria-selected="false">Shipments</button>
+    <button role="tab" data-tab="sales" aria-selected="false">Sales invoices</button>
+    <button role="tab" data-tab="money" aria-selected="false">Capital &amp; expenses</button>
+    <button role="tab" data-tab="archive" aria-selected="false">Invoice archive</button>
+    <button role="tab" data-tab="checks" aria-selected="false">Checks <span class="badge" id="ckBadge"></span></button>
+    <button role="tab" data-tab="reports" aria-selected="false">Reports</button>
+    <button role="tab" data-tab="accounts" aria-selected="false">Accounts</button>
+  </nav>
+  <main id="view"><div class="panel empty">Loading your shipments, invoices and ledger…</div></main>
+</div>
+<div class="modal" id="team" hidden role="dialog" aria-modal="true" aria-labelledby="teamH"><div class="panel modalbox">
+  <div class="row"><h2 id="teamH">Team</h2><button class="ghost" id="teamClose">Close</button></div>
+  <p class="sub">Owners manage people. Editors enter and change data. Viewers can only look.</p>
+  <div id="teamBody"></div>
+  <form class="entry" id="inviteForm" style="margin-top:12px"><label>Invite by email<input name="email" type="email" required placeholder="imran@example.com"></label><label>Role<select name="role"><option>editor</option><option>viewer</option><option>owner</option></select></label><button class="btn">Invite</button></form>
+  <p class="note">They create an account with that email and get access straight away.</p></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const S={shipments:[],sales:[],entries:[],reviews:[],settings:[]};
+let db=null, mode='loading', canWrite=false, tab='overview', openShip=null; const openInv=new Set();
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const f3=n=>(n<0?'−':'')+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:3,maximumFractionDigits:3});
+const f0=n=>(n<0?'−':'')+Math.abs(n).toLocaleString('en-US',{maximumFractionDigits:0});
+const f1=n=>(n<0?'−':'')+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+const sg=n=>n<-0.0005?'neg':n>0.0005?'pos':'';
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2200)}
+const uid=p=>p+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+/* ---------- accounting engine ---------- */
+function shipCalc(sh){
+  const items=sh.items||[], costs=sh.costs||[];
+  const supplier=costs.filter(c=>c.category==='supplier').reduce((a,c)=>a+(+c.amount||0),0);
+  const other=costs.filter(c=>c.category!=='supplier'&&c.category!=='fine').reduce((a,c)=>a+(+c.amount||0),0);
+  const fine=costs.filter(c=>c.category==='fine').reduce((a,c)=>a+(+c.amount||0),0);
+  const val=items.reduce((a,i)=>a+i.priceUSD*i.recKg,0)||1;
+  const kg=items.reduce((a,i)=>a+(+i.recKg||0),0)||1;
+  const mc=items.reduce((a,i)=>a+(+i.recMC||0),0);
+  const out={};
+  items.forEach(i=>{
+    const cost=supplier*(i.priceUSD*i.recKg/val)+other*(i.recKg/kg);
+    out[i.id]={...i,cost,perKg:i.recKg?cost/i.recKg:0,perMC:i.recMC?cost/i.recMC:0,kgPerMC:i.recMC?i.recKg/i.recMC:i.cartonKg};
+  });
+  return {items:out,supplier,other,fine,landed:supplier+other,kg,mc,
+    invMC:items.reduce((a,i)=>a+(+i.invMC||0),0),invKg:items.reduce((a,i)=>a+(+i.invKg||0),0),
+    overheadPerMC:mc?(other+fine)/mc:0};
+}
+function lineCalc(l,sc){
+  const it=sc[l.ship]?.items[l.item];
+  const kg=l.unit==='mc'?l.qty*(it?.kgPerMC||20):l.qty;
+  const amount=l.qty*l.price;
+  const cogs=it?kg*it.perKg:0;
+  return {kg,mc:it?kg/it.kgPerMC:0,amount,cogs,it};
+}
+function compute(){
+  const sc={}; S.shipments.forEach(s=>sc[s.id]=shipCalc(s));
+  const byItem={}; let revenue=0,cogs=0,received=0,invTotal=[];
+  S.sales.forEach(inv=>{
+    let t=0,c=0,k=0;
+    (inv.lines||[]).forEach(l=>{const r=lineCalc(l,sc);t+=r.amount;c+=r.cogs;k+=r.kg;
+      const key=l.ship+'|'+l.item; const b=byItem[key]||(byItem[key]={kg:0,mc:0,rev:0,cogs:0});
+      b.kg+=r.kg;b.mc+=r.mc;b.rev+=r.amount;b.cogs+=r.cogs;});
+    revenue+=t;cogs+=c;received+=Math.min(+inv.received||0,t);
+    invTotal.push({inv,total:t,cogs:c,kg:k});
+  });
+  const landed=Object.values(sc).reduce((a,s)=>a+s.landed,0), fines=Object.values(sc).reduce((a,s)=>a+s.fine,0);
+  const sum=t=>S.entries.filter(e=>e.type===t).reduce((a,e)=>a+(+e.amount||0),0);
+  const capital=sum('capital'),loans=sum('loan'),expenses=sum('expense'),drawings=sum('drawing');
+  const gross=revenue-cogs, net=gross-expenses-fines;
+  const inventory=landed-cogs, ar=revenue-received;
+  const cash=capital+loans-landed-fines+received-expenses-drawings;
+  return {sc,byItem,invTotal,revenue,cogs,gross,net,landed,fines,capital,loans,expenses,drawings,received,ar,inventory,cash,
+    assets:cash+ar+inventory, equity:capital+net-drawings};
+}
+
+/* ---------- checks: what a bookkeeper would flag ---------- */
+function checks(C){
+  const out=[];
+  S.shipments.forEach(sh=>{
+    const s=C.sc[sh.id];
+    if(s.invMC!==s.mc) out.push(['warn',`${esc(sh.code)}: supplier invoiced ${f0(s.invMC)} cartons but ${f0(s.mc)} arrived (${f0(s.invMC-s.mc)} short, ${f1(s.invKg-s.kg)} kg). Worth a claim or credit note.`]);
+    if(sh.plannedCostPerMC && s.overheadPerMC>sh.plannedCostPerMC)
+      out.push(['warn',`${esc(sh.code)}: freight, clearance and fine came to OMR ${f3(s.overheadPerMC)} per carton against the OMR ${f3(sh.plannedCostPerMC)} you planned. The fine alone is OMR ${f0((sh.costs||[]).filter(c=>c.category==='fine').reduce((a,c)=>a+ +c.amount,0))}.`]);
+    Object.values(s.items).forEach(it=>{
+      const b=C.byItem[sh.id+'|'+it.id]; if(!b) return;
+      if(b.kg>it.recKg+1) out.push(['warn',`${esc(it.product)} ${esc(it.size)}: sold ${f0(b.kg)} kg but only ${f0(it.recKg)} kg arrived. Probably size labels mixed on invoices.`]);
+      if(b.rev<b.cogs) out.push(['warn',`${esc(it.product)} ${esc(it.size)} sold below cost: OMR ${f3(b.rev)} sales against OMR ${f3(b.cogs)} cost.`]);
+    });
+  });
+  const exOnly=S.sales.filter(s=>s.source==='excel'), diffd=S.sales.filter(s=>(s.diffs||[]).length);
+  if(exOnly.length) out.push(['warn',`${exOnly.length} sales are from the Excel summary only, with no original invoice yet (${exOnly.map(s=>esc(s.no)).slice(0,6).join(', ')}${exOnly.length>6?'…':''}).`]);
+  if(diffd.length) out.push(['warn',`${diffd.length} original invoices differ from the Excel summary: ${diffd.map(s=>esc(s.no)).join(', ')}. The app uses the invoice.`]);
+  const noCust=S.sales.filter(s=>!s.customer).length, noDate=S.sales.filter(s=>!s.date).length;
+  if(noCust) out.push(['info',`${noCust} invoices have no customer name, so you can't see who owes you or who your best buyers are.`]);
+  if(noDate) out.push(['info',`${noDate} invoices have no date, so reports can't be split by month.`]);
+  if(!S.entries.length) out.push(['info','No capital recorded yet. Add the money you put in so the balance sheet shows where it came from.']);
+  return out;
+}
+
+/* ---------- views ---------- */
+function vOverview(C){
+  const m=C.revenue?C.gross/C.revenue*100:0;
+  let kgLeft=0; Object.entries(C.sc).forEach(([sid,s])=>Object.values(s.items).forEach(it=>{kgLeft+=it.recKg-(C.byItem[sid+'|'+it.id]?.kg||0)}));
+  const rows=[];
+  Object.entries(C.sc).forEach(([sid,s])=>Object.values(s.items).forEach(it=>{const b=C.byItem[sid+'|'+it.id];if(b) rows.push({name:`${it.product} ${it.size}`,v:b.rev-b.cogs})}));
+  rows.sort((a,b)=>b.v-a.v);
+  const max=Math.max(1,...rows.map(r=>Math.abs(r.v))), hasNeg=rows.some(r=>r.v<0);
+  const zero=hasNeg?(Math.max(0,...rows.map(r=>-r.v))/(max+Math.max(0,...rows.map(r=>-r.v)))*100):0;
+  const span=100-zero, negSpan=zero;
+  const negMax=Math.max(0,...rows.map(r=>-r.v))||1, posMax=Math.max(0,...rows.map(r=>r.v))||1;
+  const bars=rows.map(r=>{
+    const w=r.v>=0?(r.v/posMax)*span:(-r.v/negMax)*negSpan;
+    const left=r.v>=0?zero:zero-w;
+    return `<div class="bar"><span class="name" title="${esc(r.name)}">${esc(r.name)}</span><span class="track">${hasNeg?`<span class="zero" style="left:${zero}%"></span>`:''}<span class="fill" style="left:${left}%;width:${w}%;background:${r.v>=0?'var(--accent)':'var(--loss)'}"></span></span><span class="val ${sg(r.v)}">${f3(r.v)}</span></div>`}).join('');
+  const ck=checks(C);
+  return `<div class="kpis">
+    <div class="kpi"><div class="l">Sales</div><div class="v">${f0(C.revenue)}</div><div class="n">${S.sales.length} invoices</div></div>
+    <div class="kpi"><div class="l">Cost of fish sold</div><div class="v">${f0(C.cogs)}</div><div class="n">landed: fish + freight + customs</div></div>
+    <div class="kpi"><div class="l">Gross profit</div><div class="v ${sg(C.gross)}">${f0(C.gross)}</div><div class="n">${f1(m)}% margin</div></div>
+    <div class="kpi"><div class="l">Net profit</div><div class="v ${sg(C.net)}">${f0(C.net)}</div><div class="n">after ${f0(C.expenses+C.fines)} expenses and fines</div></div>
+    <div class="kpi"><div class="l">Stock left</div><div class="v">${f0(kgLeft)} kg</div><div class="n">at cost ${f0(C.inventory)}</div></div>
+  </div>
+  <div class="grid cols-2">
+    <section class="panel"><h2>Profit by product</h2><p class="sub">Sales minus landed cost of what was sold, OMR. Freight and clearance are spread by weight; customs fines are an expense, not fish cost.</p><div class="bars">${bars||'<p class="empty">No sales yet.</p>'}</div></section>
+    <section class="panel"><h2>Things to check</h2><p class="sub">Picked up automatically. <button class="link" data-tabgo="checks">Open the Checks tab</button> to fix them.</p><ul class="checks">${ck.map(([k,t])=>`<li class="${k}"><span class="dot"></span><span>${t}</span></li>`).join('')||'<li class="info"><span class="dot"></span><span>Nothing to flag.</span></li>'}</ul></section>
+  </div>`;
+}
+
+function vShipments(C){
+  if(!S.shipments.length) return `<section class="panel empty">No shipments yet. ${canWrite?'Add your first container below.':''}</section>`+shipForm();
+  if(!openShip||!S.shipments.find(s=>s.id===openShip)) openShip=S.shipments[0].id;
+  const sh=S.shipments.find(s=>s.id===openShip), s=C.sc[sh.id];
+  const pick=S.shipments.length>1?`<label>Shipment<select id="shipPick">${S.shipments.map(x=>`<option value="${esc(x.id)}" ${x.id===sh.id?'selected':''}>${esc(x.code)}</option>`).join('')}</select></label>`:'';
+  let tMC=0,tKg=0,tCost=0,tSold=0;
+  const rows=Object.values(s.items).map(it=>{
+    const b=C.byItem[sh.id+'|'+it.id]||{kg:0,mc:0,rev:0,cogs:0};
+    const diff=it.recMC-it.invMC, avgMC=b.mc?b.rev/b.mc:0, left=it.recKg-b.kg;
+    tMC+=it.recMC;tKg+=it.recKg;tCost+=it.cost;tSold+=b.kg;
+    return `<tr><td>${esc(it.product)}</td><td>${esc(it.size)}</td><td><code>${esc(it.sku||'–')}</code></td><td class="n">${f0(it.invMC)}</td><td class="n">${f0(it.recMC)}</td><td class="n ${sg(diff)}">${diff?f0(diff):'–'}</td><td class="n">${f1(it.recKg)}</td><td class="n">${it.priceUSD.toFixed(3)}</td><td class="n">${f3(it.perMC)}</td><td class="n">${f3(it.targetMC||0)}</td><td class="n ${avgMC&&avgMC<it.perMC?'neg':''}">${avgMC?f3(avgMC):'–'}</td><td class="n ${left<-1?'neg':''}">${f1(left)}</td>${canWrite?`<td><button class="ghost" data-del-item="${esc(it.id)}">Remove</button></td>`:''}</tr>`}).join('');
+  const costs=(sh.costs||[]).map(c=>`<tr><td>${esc(c.label)}</td><td>${esc(c.category)}</td><td class="n">${f3(+c.amount)}</td>${canWrite?`<td><button class="ghost" data-del-cost="${esc(c.id)}">Remove</button></td>`:''}</tr>`).join('');
+  return `<section class="panel">
+    <div class="row"><div><h2>${esc(sh.code)} · ${esc(sh.origin||'')}</h2><p class="sub">${esc(sh.supplier||'Supplier not recorded')}${sh.arrived?' · arrived '+esc(sh.arrived):''}</p></div>${pick}</div>
+    <div class="facts">
+      <div>Supplier invoice<b>USD ${f3(+sh.invoiceUSD||0)}</b></div>
+      <div>Paid to supplier<b>USD ${f3(+sh.paidUSD||0)}</b></div>
+      <div>Discount<b>USD ${f3((+sh.invoiceUSD||0)-(+sh.paidUSD||0))}</b></div>
+      <div>Exchange rate<b>${sh.fx} OMR/USD</b></div>
+      <div>Landed cost<b>OMR ${f3(s.landed)}</b></div>
+      <div>Landed per kg<b>OMR ${f3(s.landed/s.kg)}</b></div>
+    </div>
+    <div class="tbl"><table><thead><tr><th>Fish</th><th>Size</th><th>SKU</th><th class="n">Invoiced MC</th><th class="n">Received MC</th><th class="n">Diff</th><th class="n">Received kg</th><th class="n">USD/kg</th><th class="n">Landed cost/MC</th><th class="n">Planned price/MC</th><th class="n">Actual price/MC</th><th class="n">Kg left</th>${canWrite?'<th></th>':''}</tr></thead>
+    <tbody>${rows}<tr class="tot"><td colspan="4">Total</td><td class="n">${f0(tMC)}</td><td></td><td class="n">${f1(tKg)}</td><td></td><td></td><td></td><td></td><td class="n">${f1(tKg-tSold)}</td>${canWrite?'<td></td>':''}</tr></tbody></table></div>
+    <p class="note">MC = master carton. Landed cost puts the supplier payment on each fish by its invoice value, and spreads freight, clearance, fine and permit by weight. Red price means it sold below landed cost.</p>
+  </section>
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel"><h2>Costs for this container</h2><p class="sub">Everything paid to get the fish into your store.</p>
+      <div class="tbl"><table><thead><tr><th>Cost</th><th>Type</th><th class="n">OMR</th>${canWrite?'<th></th>':''}</tr></thead><tbody>${costs}<tr class="tot"><td colspan="2">Landed cost of fish (excl. fines)</td><td class="n">${f3(s.landed)}</td>${canWrite?'<td></td>':''}</tr>${s.fine?`<tr><td colspan="2" class="note">Fines are booked as an expense, not as fish cost</td><td class="n">${f3(s.fine)}</td>${canWrite?'<td></td>':''}</tr>`:''}</tbody></table></div>
+      ${canWrite?`<form class="entry" id="costForm" style="margin-top:12px">
+        <label>Cost<input id="cLabel" required placeholder="e.g. Cold store rent"></label>
+        <label>Type<select id="cCat"><option value="freight">freight</option><option value="clearance">clearance</option><option value="fine">fine</option><option value="permit">permit</option><option value="storage">storage</option><option value="transport">transport</option><option value="supplier">supplier payment</option><option value="other">other</option></select></label>
+        <label>Amount OMR<input id="cAmt" type="number" step="0.001" required></label>
+        <button class="btn">Add cost</button></form>`:''}
+    </section>
+    ${canWrite?`<section class="panel"><h2>Add a fish line</h2><p class="sub">One row per fish and size, from the packing list.</p>
+      <form class="entry" id="itemForm">
+        <label>Fish<input id="iProd" required placeholder="Rohu"></label>
+        <label>SKU<input id="iSku" placeholder="MROH2"></label>
+        <label>Size<input id="iSize" required placeholder="2 kg up"></label>
+        <label>Invoiced MC<input id="iInvMC" type="number" required></label>
+        <label>Invoiced kg<input id="iInvKg" type="number" step="0.1" required></label>
+        <label>USD per kg<input id="iUSD" type="number" step="0.0001" required></label>
+        <label>Received MC<input id="iRecMC" type="number" required></label>
+        <label>Received kg<input id="iRecKg" type="number" step="0.1" required></label>
+        <label>Planned price/MC<input id="iTarget" type="number" step="0.001"></label>
+        <button class="btn">Add line</button></form></section>`:''}
+  </div>${shipForm()}`;
+}
+function shipForm(){
+  if(!canWrite) return '';
+  return `<section class="panel" style="margin-top:16px"><h2>New container</h2><p class="sub">Start a new shipment, then add its fish lines and costs.</p>
+  <form class="entry" id="shipForm">
+    <label>Container code<input id="sCode" required placeholder="FCL-002"></label>
+    <label>Origin<input id="sOrigin" placeholder="Myanmar"></label>
+    <label>Supplier<input id="sSup"></label>
+    <label>Arrival date<input id="sDate" type="date"></label>
+    <label>OMR per USD<input id="sFx" type="number" step="0.0001" value="0.388"></label>
+    <label>Invoice USD<input id="sInv" type="number" step="0.01"></label>
+    <label>Paid USD<input id="sPaid" type="number" step="0.01"></label>
+    <label>Planned cost/MC<input id="sPlan" type="number" step="0.001" value="3"></label>
+    <button class="btn">Create container</button></form></section>`;
+}
+
+function itemOptions(C){
+  return S.shipments.flatMap(sh=>Object.values(C.sc[sh.id].items).map(it=>`<option value="${esc(sh.id+'|'+it.id)}">${esc(sh.code)} · ${esc(it.product)} ${esc(it.size)}</option>`)).join('');
+}
+function vSales(C){
+  const name=(l)=>{const it=C.sc[l.ship]?.items[l.item];return it?`${it.product} ${it.size}${it.sku?' · '+it.sku:''}`:l.item};
+  const rows=C.invTotal.map(({inv,total,cogs,kg})=>{
+    const bal=total-(+inv.received||0);
+    const lines=(inv.lines||[]).map(l=>{const r=lineCalc(l,C.sc);return `<tr><td>${esc(name(l))}</td><td class="n">${f1(l.qty)} ${l.unit==='mc'?'MC':'kg'}</td><td class="n">${f3(l.price)}</td><td class="n">${f3(r.amount)}</td><td class="n">${f3(r.amount-r.cogs)}</td></tr>`}).join('');
+    const open=openInv.has(inv.id);
+    return `<tr>
+      <td><button class="link" data-toggle="${esc(inv.id)}" aria-expanded="${open}">${open?'▾':'▸'} ${esc(inv.no)}</button> ${srcChip(inv)}</td><td>${esc(inv.date||'—')}</td><td>${esc(inv.customer||'Not recorded')}</td>
+      <td class="n">${f1(kg)}</td><td class="n">${f3(total)}</td><td class="n ${sg(total-cogs)}">${f3(total-cogs)}</td>
+      <td>${bal>0.0005?`<span class="chip warn">Owes ${f3(bal)}</span>`:'<span class="chip ok">Paid</span>'}</td>
+      ${canWrite?`<td><button class="ghost" data-pay="${esc(inv.id)}">${bal>0.0005?'Mark paid':'Mark unpaid'}</button> <button class="ghost" data-del-sale="${esc(inv.id)}">Delete</button></td>`:''}
+    </tr>${open?`<tr><td colspan="${canWrite?8:7}" style="background:var(--soft);padding:10px 14px 14px 28px">${inv.note?`<p class="note" style="margin:0 0 8px">${esc(inv.note)}</p>`:''}<div class="tbl" style="background:var(--panel)"><table><thead><tr><th>Fish</th><th class="n">Qty</th><th class="n">Price</th><th class="n">Amount</th><th class="n">Profit</th></tr></thead><tbody>${lines}</tbody></table></div></td></tr>`:''}`}).join('');
+  return `${canWrite?`<section class="panel" style="margin-bottom:16px"><h2>New sales invoice</h2><p class="sub">Price per kg, or per carton for fish sold by the box.</p>
+    <form id="saleForm"><div class="entry" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:10px">
+      <label>Invoice no.<input id="sNo" required placeholder="INV-046"></label>
+      <label>Date<input id="sDt" type="date"></label>
+      <label>Customer<input id="sCust" placeholder="Customer name"></label>
+      <label>Amount received now<input id="sRcv" type="number" step="0.001" placeholder="blank = fully paid"></label></div>
+      <div class="lines" id="saleLines"></div>
+      <div class="row"><button type="button" class="ghost" id="addLine">+ Add line</button><button class="btn">Save invoice</button></div></form></section>`:''}
+    <section class="panel"><h2>Sales invoices</h2><p class="sub">Click an invoice to see its lines. Profit uses landed cost per kg.</p>
+    <div class="tbl"><table><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th class="n">Kg</th><th class="n">Amount</th><th class="n">Profit</th><th>Status</th>${canWrite?'<th></th>':''}</tr></thead>
+    <tbody>${rows||`<tr><td colspan="8" class="empty">No invoices yet.</td></tr>`}</tbody></table></div></section>`;
+}
+function lineRow(C){
+  return `<div class="line"><label>Fish<select class="lItem">${itemOptions(C)}</select></label>
+    <label>Qty<input class="lQty" type="number" step="0.01" required></label>
+    <label>Unit<select class="lUnit"><option value="kg">kg</option><option value="mc">carton</option></select></label>
+    <label>Price OMR<input class="lPrice" type="number" step="0.0001" required></label>
+    <button type="button" class="ghost lDel">✕</button></div>`;
+}
+
+function vMoney(C){
+  const lab={capital:'Capital in',loan:'Loan received',expense:'Expense',drawing:'Owner drawing'};
+  const P=partners();
+  const who=e=>(e.type==='capital'||e.type==='drawing')?(P.byId[e.partner]?.name||(canWrite?`<select class="assignP" data-entry="${esc(e.id)}" aria-label="Assign partner"><option value="">Assign partner…</option>${P.list.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select>`:'Not assigned')):e.type==='expense'?esc(EXPCAT[e.cat||'other']?.[1]||'Other'):'';
+  const rows=S.entries.map(e=>`<tr><td>${esc(e.date||'—')}</td><td>${lab[e.type]||esc(e.type)}</td><td>${who(e)}</td><td>${esc(e.note||'')}</td><td class="n">${f3(+e.amount)}</td>${canWrite?`<td><button class="ghost" data-del-entry="${esc(e.id)}">Remove</button></td>`:''}</tr>`).join('');
+  return `<div class="grid cols-2">
+  ${canWrite?`<section class="panel"><h2>Record money in or out</h2><p class="sub">Money that isn't a container cost or a sale: what you put in, loans, rent, salaries, what you take out.</p>
+    <form class="entry" id="entryForm">
+      <label>Type<select id="eType"><option value="capital">Capital in</option><option value="loan">Loan received</option><option value="expense">Expense</option><option value="drawing">Owner drawing</option></select></label>
+      <label>Date<input id="eDate" type="date"></label>
+      <label>Amount OMR<input id="eAmt" type="number" step="0.001" required></label>
+      <label>Partner<select id="ePartner">${partners().list.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></label>
+      <label>Expense type<select id="eCat">${Object.entries(EXPCAT).map(([k,v])=>`<option value="${k}">${esc(v[1])}</option>`).join('')}</select></label>
+      <label>Note<input id="eNote" placeholder="e.g. Cold store rent, Oct"></label>
+      <button class="btn">Save</button></form><p class="note">Partner is used for capital and drawings; expense type for expenses.</p></section>`:''}
+  <section class="panel"><h2>Ledger</h2><p class="sub">Capital, loans, running expenses and drawings.</p>
+    <div class="tbl"><table><thead><tr><th>Date</th><th>Type</th><th>Partner / type</th><th>Note</th><th class="n">OMR</th>${canWrite?'<th></th>':''}</tr></thead><tbody>${rows||'<tr><td colspan="6" class="empty">Nothing recorded yet.</td></tr>'}</tbody></table></div></section></div>`;
+}
+
+function srcChip(inv){
+  return inv.source==='invoice'?`<span class="chip ok" title="Matched to ${esc(inv.file||'original invoice')}">Original</span>`:inv.source==='excel'?'<span class="chip warn" title="Only in the Excel summary">Excel only</span>':'<span class="chip ok">Entered</span>';
+}
+let AQ={q:'',from:'',to:'',src:'',open:null,edit:false};
+function vArchive(C){
+  const dates=S.sales.map(s=>s.date).filter(Boolean).sort();
+  return `<section class="panel"><div class="row"><div><h2>Invoice archive</h2><p class="sub">Every sales invoice for every container. Search by number, fish, SKU or date, then open one to see it as issued.</p></div></div>
+    <form class="entry" id="archForm" onsubmit="return false">
+      <label>Search<input id="aQ" type="search" placeholder="e.g. 23, Rohu, MROH2" value="${esc(AQ.q)}"></label>
+      <label>From<input id="aFrom" type="date" value="${esc(AQ.from)}" min="${dates[0]||''}" max="${dates.at(-1)||''}"></label>
+      <label>To<input id="aTo" type="date" value="${esc(AQ.to)}" min="${dates[0]||''}" max="${dates.at(-1)||''}"></label>
+      <label>Source<select id="aSrc"><option value="">All invoices</option><option value="invoice" ${AQ.src==='invoice'?'selected':''}>Original invoice</option><option value="excel" ${AQ.src==='excel'?'selected':''}>Excel only</option><option value="diff" ${AQ.src==='diff'?'selected':''}>Differs from Excel</option></select></label>
+    </form></section>
+    <div id="archOut" style="margin-top:16px">${archiveResults(C)}</div>`;
+}
+function invText(inv,C){
+  const it=l=>C.sc[l.ship]?.items[l.item];
+  return [inv.no,String(parseInt(String(inv.no).replace(/\D/g,''))||''),inv.date,inv.customer,inv.file,inv.seller,...(inv.lines||[]).flatMap(l=>{const i=it(l);return i?[i.product,i.size,i.sku,i.packSku||'',`${i.product} ${i.size}`]:[l.item]})].join(' ').toLowerCase();
+}
+function archiveResults(C){
+  const q=AQ.q.trim().toLowerCase();
+  const list=S.sales.filter(inv=>{
+    if(q && !q.split(/\s+/).every(w=>invText(inv,C).includes(w))) return false;
+    if(AQ.from && (!inv.date||inv.date<AQ.from)) return false;
+    if(AQ.to && (!inv.date||inv.date>AQ.to)) return false;
+    if(AQ.src==='diff') return (inv.diffs||[]).length>0;
+    if(AQ.src && inv.source!==AQ.src) return false;
+    return true;
+  });
+  const shipOf=inv=>[...new Set((inv.lines||[]).map(l=>l.ship))].map(id=>S.shipments.find(s=>s.id===id)?.code||id).join(' + ');
+  const tot=inv=>(inv.lines||[]).reduce((a,l)=>a+l.qty*l.price,0);
+  const rows=list.map(inv=>`<tr class="${AQ.open===inv.id?'sel':''}"><td><button class="link" data-arch="${esc(inv.id)}">${esc(inv.no)}</button></td><td>${esc(inv.date?fmtDate(inv.date):'—')}</td><td>${esc(shipOf(inv))}</td><td>${esc(inv.customer||'Not recorded')}</td><td class="n">${(inv.lines||[]).length}</td><td class="n">${f3(tot(inv))}</td><td>${srcChip(inv)}${(inv.diffs||[]).length?' <span class="chip bad">Differs</span>':''}</td></tr>`).join('');
+  const sel=S.sales.find(s=>s.id===AQ.open);
+  return `<div class="grid ${sel?'cols-2':''}"><section class="panel"><p class="sub" style="margin:0 0 10px">${list.length} of ${S.sales.length} invoices · OMR ${f3(list.reduce((a,i)=>a+tot(i),0))}</p>
+    <div class="tbl"><table><thead><tr><th>Invoice</th><th>Date</th><th>Container</th><th>Customer</th><th class="n">Lines</th><th class="n">Total OMR</th><th>Source</th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="empty">No invoices match. Clear the search or widen the dates.</td></tr>'}</tbody></table></div></section>
+    ${sel?invoiceSheet(sel,C):''}</div>`;
+}
+function fmtDate(d){const [y,m,dd]=String(d).split('-');return dd&&m&&y?`${dd}/${m}/${y}`:d}
+function invoiceSheet(inv,C){
+  if(AQ.edit&&canWrite) return invoiceEdit(inv,C);
+  const it=l=>C.sc[l.ship]?.items[l.item];
+  let tk=0,tmc=0,ta=0;
+  const mixed=new Set((inv.lines||[]).map(l=>l.ship)).size>1;
+  const rows=(inv.lines||[]).map(l=>{const i=it(l);const kg=l.unit==='mc'?l.qty*(i?.kgPerMC||20):l.qty;const mc=l.mc??(i?Math.round(kg/i.kgPerMC):'');const amt=l.qty*l.price;tk+=kg;tmc+=+mc||0;ta+=amt;
+    return `<tr><td class="n">${mc}</td><td>${esc(i?`${i.product} ${i.size}`:l.item)}${mixed?` <span class="note">${esc(S.shipments.find(z=>z.id===l.ship)?.code||'')}</span>`:''}</td><td><code>${esc(i?.sku||'')}</code></td><td class="n">${f1(kg)}</td><td class="n">${l.price.toFixed(l.unit==='mc'?4:3)}${l.unit==='mc'?'/MC':''}</td><td class="n">${f3(amt)}</td></tr>`}).join('');
+  const diffs=(inv.diffs||[]).map(d=>{const i=C.sc[d.ship||'fcl-001']?.items[d.item];const n=(i?`${i.product} ${i.size}`:d.item)+(S.shipments.length>1?` (${S.shipments.find(z=>z.id===(d.ship||'fcl-001'))?.code||''})`:'');
+    return `<li>${esc(n)}: ${d.invKg!==d.xlKg?`invoice ${f1(d.invKg)} kg, Excel ${f1(d.xlKg)} kg`:''}${d.invKg!==d.xlKg&&d.invPrice!==d.xlPrice?'; ':''}${d.invPrice!==d.xlPrice?`invoice price ${d.invPrice}, Excel ${d.xlPrice}`:''}</li>`}).join('');
+  return `<section class="panel invsheet" aria-label="Invoice ${esc(inv.no)}">
+    <div class="row" style="align-items:flex-start"><div><div class="eyebrow">Invoice</div><h2 style="margin:0">${esc(inv.seller||'ATLAL AL KHADRA')}</h2></div>
+      <div style="text-align:right"><div><b>${esc(inv.no)}</b></div><div class="note">Date: ${esc(inv.date?fmtDate(inv.date):'not recorded')}</div><div class="note">Customer: ${esc(inv.customer||'not recorded')}</div></div></div>
+    <div class="tbl" style="margin-top:12px"><table><thead><tr><th class="n">Qty MC</th><th>Item</th><th>SKU</th><th class="n">Net kg</th><th class="n">Price OMR</th><th class="n">Line total</th></tr></thead>
+    <tbody>${rows}<tr class="tot"><td class="n">${tmc||''}</td><td colspan="2">Total</td><td class="n">${f1(tk)}</td><td></td><td class="n">${f3(ta)}</td></tr></tbody></table></div>
+    <p class="note">${inv.source==='invoice'?`Source: original invoice file ${esc(inv.file)}.`:inv.source==='excel'?`Source: ${inv.refs?'Excel summary / container sales report':'Excel summary'} only. The original invoice has not been received yet.`:'Entered in this app.'}${inv.tallyDate?` Tally sheet date: ${esc(inv.tallyDate)}.`:''}${inv.printedTotal!=null?` <b class="neg">Printed total on the invoice: ${f3(inv.printedTotal)}.</b>`:''}${inv.note?' '+esc(inv.note):''}</p>
+    ${diffs?`<div style="margin-top:8px"><div style="padding:9px 12px;border-radius:8px;background:var(--warn-bg)"><b style="color:var(--warn)">Differs from the ${inv.refs?'Excel / container report':'Excel summary'}</b> (Excel total OMR ${f3(inv.excelTotal||0)})<ul style="margin:6px 0 0;padding-left:18px">${diffs}</ul></div></div>`:''}
+    ${(inv.edits||[]).length?`<details style="margin-top:8px"><summary class="note">Change history (${inv.edits.length})</summary><ul class="note" style="margin:4px 0 0;padding-left:18px">${inv.edits.map(e=>`<li>${esc(e.at.slice(0,10))}: ${esc(e.what)}</li>`).join('')}</ul></details>`:''}
+    <div class="row" style="margin-top:10px"><button class="ghost" data-arch-close="1">Close</button>${canWrite?`<button class="btn" data-inv-edit="${esc(inv.id)}">Edit invoice</button>`:''}</div>
+  </section>`;
+}
+function invoiceEdit(inv,C){
+  const it=l=>C.sc[l.ship]?.items[l.item];
+  const rows=(inv.lines||[]).map((l,i)=>{const x=it(l);return `<tr><td>${esc(x?`${x.product} ${x.size}`:l.item)} <code>${esc(x?.sku||'')}</code></td>
+    <td><input class="eQty" data-i="${i}" type="number" step="0.01" value="${l.qty}" aria-label="Quantity"></td><td class="note">${l.unit==='mc'?'cartons':'kg'}</td>
+    <td><input class="ePrice" data-i="${i}" type="number" step="0.0001" value="${l.price}" aria-label="Price"></td></tr>`}).join('');
+  return `<section class="panel invsheet" aria-label="Edit invoice ${esc(inv.no)}">
+    <div class="eyebrow">Editing</div><h2 style="margin:0 0 10px">${esc(inv.no)}</h2>
+    <form class="entry" id="invEditForm" data-id="${esc(inv.id)}">
+      <label>Date<input id="eDt" type="date" value="${esc(inv.date||'')}"></label>
+      <label>Customer<input id="eCust" value="${esc(inv.customer||'')}" placeholder="Customer name"></label>
+    </form>
+    <div class="tbl" style="margin-top:12px"><table><thead><tr><th>Item</th><th>Qty</th><th></th><th>Price OMR</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="note">Every change is saved with a note in this invoice's change history.</p>
+    <div class="row" style="margin-top:10px"><button class="ghost" data-inv-cancel="1">Cancel</button><button class="btn" data-inv-save="${esc(inv.id)}">Save changes</button></div>
+  </section>`;
+}
+/* ---------- data checks ---------- */
+const nm=it=>it?`${it.product} ${it.size}`:'';
+const invNum=s=>/^\s*(inv|invoice)?[-\s#:]*\d+\s*$/i.test(String(s.no))?parseInt(String(s.no).replace(/\D/g,'')):null;
+function findIssues(C){
+  const out=[]; const add=o=>out.push(o);
+  const T=inv=>(inv.lines||[]).reduce((a,l)=>a+l.qty*l.price,0);
+  S.shipments.forEach(sh=>{
+    const s=C.sc[sh.id], invs=S.sales.filter(v=>(v.lines||[]).some(l=>l.ship===sh.id));
+    if(s.invMC>s.mc) add({key:`short:${sh.id}`,sev:'fix',title:`${sh.code}: ${f0(s.invMC-s.mc)} cartons short from the supplier`,
+      why:`The supplier invoice lists ${f0(s.invMC)} cartons but ${f0(s.mc)} arrived. You paid for fish you did not receive unless the supplier gives a credit.`,
+      facts:[['Container',sh.code],['Invoiced',`${f0(s.invMC)} MC · ${f1(s.invKg)} kg`],['Received',`${f0(s.mc)} MC · ${f1(s.kg)} kg`],
+        ...Object.values(s.items).filter(i=>i.recMC<i.invMC).map(i=>[nm(i)+(i.sku?' ('+i.sku+')':''),`${f0(i.invMC-i.recMC)} MC short`])],
+      fix:{type:'credit',ship:sh.id,label:'Record supplier credit (OMR)'}});
+    const rd=Object.values(s.items).filter(i=>i.recMC!==i.invMC||Math.abs(i.recKg-i.invKg)>Math.max(1,i.invKg*0.005));
+    if(rd.length) add({key:`recdiff:${sh.id}`,sev:'check',title:`${sh.code}: ${rd.length} fish arrived different from the supplier invoice`,
+      why:'For these fish, the cartons or kg received do not match what the supplier invoiced. Fewer means you may be owed a credit; more means the invoice or packing list may be wrong. Check the packing list and weigh slips.',
+      facts:rd.map(i=>[`${nm(i)}${i.sku?' ('+i.sku+')':''}`,`invoiced ${f0(i.invMC)} MC / ${f1(i.invKg)} kg → received ${f0(i.recMC)} MC / ${f1(i.recKg)} kg`])});
+    const recUSD=Object.values(s.items).reduce((a,i)=>a+i.priceUSD*i.recKg,0), gapUSD=recUSD-(+sh.paidUSD||0)-(+sh.discountUSD||0);
+    if(sh.paidUSD&&gapUSD>50) add({key:`paygap:${sh.id}`,sev:'check',title:`${sh.code}: paid USD ${f0(gapUSD)} less than the goods received are worth`,
+      why:`At supplier prices, the fish received are worth USD ${f3(recUSD)}. Payments to the supplier total USD ${f3(+sh.paidUSD)}${sh.discountUSD?` plus a USD ${f3(+sh.discountUSD)} discount`:''}. Either the supplier gave a discount, or USD ${f3(gapUSD)} is still owed. If it is owed, add it as a supplier payment when paid.`,
+      facts:[['Container',sh.code],['Supplier invoice',`USD ${f3(+sh.invoiceUSD||0)}`],['Value received',`USD ${f3(recUSD)}`],['Paid',`USD ${f3(+sh.paidUSD)}`],['Gap',`USD ${f3(gapUSD)}`]]});
+    (sh.flags||[]).forEach(fl=>add({key:`flag:${sh.id}:${fl.key}`,sev:fl.sev||'check',title:fl.title,why:fl.why,facts:[['Container',sh.code]]}));
+    if(sh.plannedCostPerMC&&s.overheadPerMC>sh.plannedCostPerMC+0.005){const fine=(sh.costs||[]).filter(c=>c.category==='fine').reduce((a,c)=>a+ +c.amount,0);
+      add({key:`overhead:${sh.id}`,sev:'check',title:`${sh.code}: import costs above plan`,why:`Freight, clearance, fine and permit came to OMR ${f3(s.overheadPerMC)} per carton against OMR ${f3(sh.plannedCostPerMC)} planned.${fine?` The customs fine (OMR ${f0(fine)}) is most of the gap; confirm it was paid and is not inside the clearance bill.`:''}`,
+        facts:[['Container',sh.code],['Planned per MC',f3(sh.plannedCostPerMC)],['Actual per MC',f3(s.overheadPerMC)],['Fine',f3(fine)]]});}
+    Object.values(s.items).forEach(i=>{
+      const b=C.byItem[sh.id+'|'+i.id]; if(!b) return;
+      const lines=invs.flatMap(v=>(v.lines||[]).filter(l=>l.item===i.id&&l.ship===sh.id).map(l=>({v,l})));
+      if(b.kg>i.recKg+1){
+        const under=Object.values(s.items).filter(o=>o.product===i.product&&o.id!==i.id).map(o=>({o,left:o.recKg-(C.byItem[sh.id+'|'+o.id]?.kg||0)})).filter(x=>x.left>1).sort((a,b)=>b.left-a.left)[0];
+        add({key:`oversold:${sh.id}:${i.id}`,sev:'fix',inv:lines.map(x=>x.v.id),item:i.id,title:`${nm(i)}: sold ${f0(b.kg-i.recKg)} kg more than arrived`,
+          why:`${f0(b.kg)} kg were invoiced but only ${f0(i.recKg)} kg were received. ${under?`At the same time ${nm(under.o)} has ${f0(under.left)} kg unsold, so some invoices probably billed ${nm(under.o)} as ${nm(i)}. Check the invoices below and correct the size where needed.`:'Check the invoices below for a wrong size or quantity.'}`,
+          facts:[['Container',sh.code],['Fish',nm(i)],['SKU',i.sku||'–'],['Received',`${f1(i.recKg)} kg`],['Invoiced',`${f1(b.kg)} kg`],['Invoices',lines.map(x=>x.v.no).join(', ')]]});
+      }
+      if(b.rev<b.cogs-0.005) add({key:`belowcost:${sh.id}:${i.id}`,sev:'check',item:i.id,inv:lines.map(x=>x.v.id),title:`${nm(i)}: sold below landed cost`,
+        why:`Sales of OMR ${f3(b.rev)} against a landed cost of OMR ${f3(b.cogs)}, a loss of OMR ${f3(b.cogs-b.rev)}. Check the price, or raise it on the next container.`,
+        facts:[['Fish',nm(i)],['SKU',i.sku||'–'],['Avg price/kg',f3(b.rev/b.kg)],['Landed cost/kg',f3(i.perKg)],['Invoices',lines.map(x=>x.v.no).join(', ')]]});
+      // price outliers: a price that differs from both the invoice before and after (same fish, same unit)
+      const seq=lines.filter(x=>invNum(x.v)!=null).sort((a,b)=>invNum(a.v)-invNum(b.v));
+      seq.forEach(({v,l},k)=>{
+        const pv=seq[k-1], nx=seq[k+1]; if(!pv||!nx||pv.l.unit!==l.unit||nx.l.unit!==l.unit) return;
+        if(Math.abs(pv.l.price-nx.l.price)>1e-9||Math.abs(pv.l.price-l.price)<1e-9) return;
+        const nx2=seq[k+2]; if(nx2&&Math.abs(nx2.l.price-l.price)<1e-9) return; // start of a new price, not a typo
+        const mp=pv.l.price, idx=v.lines.indexOf(l);
+        add({key:`price:${v.id}:${l.item}`,sev:'check',inv:[v.id,pv.v.id,nx.v.id],item:i.id,title:`${v.no}: unusual price for ${nm(i)}`,
+          why:`This invoice charges ${l.price} per ${l.unit==='mc'?'carton':'kg'}, but the invoices just before and after (${pv.v.no}, ${nx.v.no}) both charge ${mp}. It could be a special price or a typing mistake.`,
+          facts:[['Invoice',v.no],['Date',v.date?fmtDate(v.date):'—'],['Fish',nm(i)],['SKU',i.sku||'–'],['Qty',`${f1(l.qty)} ${l.unit==='mc'?'MC':'kg'}`],['This price',String(l.price)],['Usual price',String(mp)],['Effect if changed',`OMR ${f3((mp-l.price)*l.qty)}`]],
+          fix:{type:'price',inv:v.id,idx,to:mp,label:`Change price to ${mp}`}});
+      });
+    });
+    // carton weight vs kg
+    Object.values(s.items).forEach(i=>{const nom=+i.cartonKg||20; if(!i.recMC) return; const per=i.recKg/i.recMC; if(Math.abs(per-nom)/nom<=0.2) return;
+      const soldMC=invs.flatMap(v=>(v.lines||[]).filter(l=>l.ship===sh.id&&l.item===i.id&&l.mc)).reduce((a,l)=>a+l.mc,0);
+      add({key:`cartonwt:${sh.id}:${i.id}`,sev:'fix',item:i.id,title:`${sh.code}: received cartons do not fit the weight for ${nm(i)}`,
+        why:`${f1(i.recKg)} kg in ${f0(i.recMC)} cartons is ${f1(per)} kg per carton, but these cartons hold about ${f1(nom)} kg.${soldMC?` The invoices so far show ${f0(soldMC)} cartons sold.`:''} The carton count or the weight on the goods-received sheet is probably wrong. Correct it on the Shipments tab.`,
+        facts:[['Container',sh.code],['Fish',nm(i)],['SKU',i.sku||'–'],['Received',`${f0(i.recMC)} MC · ${f1(i.recKg)} kg`],['Expected cartons',f0(i.recKg/nom)],...(soldMC?[['Cartons on invoices',f0(soldMC)]]:[])]});});
+    invs.forEach(v=>(v.lines||[]).forEach((l,idx)=>{const i=s.items[l.item]; if(!i||!l.mc||l.unit!=='kg'||l.ship!==sh.id) return; const per=l.qty/l.mc, exp=+i.cartonKg||i.kgPerMC;
+      if(Math.abs(per-exp)/exp>0.2) add({key:`kgmc:${v.id}:${l.item}`,sev:'fix',inv:[v.id],title:`${v.no}: weight does not fit the cartons for ${nm(i)}`,why:`${f1(l.qty)} kg over ${l.mc} cartons is ${f1(per)} kg per carton; these cartons hold about ${f1(exp)} kg. Either the kg or the carton count is wrong.`,
+        facts:[['Invoice',v.no],['Fish',nm(i)],['SKU',i.sku||'–'],['Cartons',l.mc],['Kg',f1(l.qty)],['Expected kg',f1(l.mc*exp)]],fix:{type:'kg',inv:v.id,idx,to:Math.round(l.mc*exp),label:`Set weight to ${f0(l.mc*exp)} kg`}});}));
+  });
+  // printed total on the invoice does not equal its lines
+  S.sales.filter(v=>v.printedTotal!=null&&Math.abs(v.printedTotal-T(v))>0.005).forEach(v=>add({key:`printed:${v.id}`,sev:'fix',inv:[v.id],
+    title:`${v.no}: total printed on the invoice is wrong`,
+    why:`The lines add up to OMR ${f3(T(v))}, but the invoice shows OMR ${f3(v.printedTotal)} (OMR ${f3(T(v)-v.printedTotal)} ${T(v)>v.printedTotal?'less':'more'}). The customer may have been charged the wrong amount. The app uses the lines. Check what the customer actually paid.`,
+    facts:[['Invoice',v.no],['Date',v.date?fmtDate(v.date):'—'],['Lines add to',f3(T(v))],['Printed total',f3(v.printedTotal)]]}));
+  // a line priced like a different size of the same fish (probably the wrong size picked)
+  S.shipments.forEach(sh=>{const its=C.sc[sh.id].items;
+    const L=S.sales.flatMap(v=>(v.lines||[]).map((l,idx)=>({v,l,idx}))).filter(x=>x.l.ship===sh.id&&invNum(x.v)!=null&&x.l.unit==='kg');
+    const near=(item,n,excl)=>{const c={};L.filter(x=>x.l.item===item&&x.v!==excl&&Math.abs(invNum(x.v)-n)<=5).forEach(x=>c[x.l.price]=(c[x.l.price]||0)+1);const e=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];return e&&e[1]>=1?+e[0]:null};
+    L.forEach(({v,l,idx})=>{const n=invNum(v),own=near(l.item,n,v); if(own==null||Math.abs(own-l.price)<1e-9) return; const me=its[l.item]; if(!me) return;
+      const nextSame=L.filter(x=>x.l.item===l.item&&invNum(x.v)>n).sort((a,b)=>invNum(a.v)-invNum(b.v))[0]; if(nextSame&&Math.abs(nextSame.l.price-l.price)<1e-9) return; // a new price, not a mistake
+      if(out.some(o=>o.key===`price:${v.id}:${l.item}`)) return;
+      const alt=Object.values(its).find(o=>o.id!==l.item&&o.product===me.product&&near(o.id,n,v)!=null&&Math.abs(near(o.id,n,v)-l.price)<1e-9); if(!alt) return;
+      add({key:`size:${v.id}:${idx}`,sev:'fix',inv:[v.id],item:l.item,title:`${v.no}: ${nm(me)} is priced like ${nm(alt)}`,
+        why:`This line says ${nm(me)} at ${l.price}, but nearby invoices sell ${nm(me)} at ${own} and ${nm(alt)} at ${l.price}. The wrong size was probably picked on the invoice, which also puts the stock count out for both sizes.`,
+        facts:[['Invoice',v.no],['Date',v.date?fmtDate(v.date):'—'],['Line',`${nm(me)} · ${f1(l.qty)} kg @ ${l.price}`],['Usual price',`${nm(me)} ${own} · ${nm(alt)} ${l.price}`]],
+        fix:{type:'item',inv:v.id,idx,to:alt.id,label:`Change to ${nm(alt)}`}});});});
+  // invoice dates out of order
+  {const dated=S.sales.filter(v=>v.date&&invNum(v)!=null).sort((a,b)=>invNum(a)-invNum(b));const bad=[];
+   dated.forEach((v,k)=>{if(k&&v.date<dated[k-1].date) bad.push([v,dated[k-1]])});
+   if(bad.length) add({key:'dateorder',sev:'check',inv:bad.flatMap(([a,b])=>[a.id,b.id]),title:`${bad.length} invoice${bad.length>1?'s are':' is'} dated before the invoice before ${bad.length>1?'them':'it'}`,
+     why:'Invoice numbers should follow the date order. One of the dates may be mistyped.',facts:bad.map(([a,b])=>[a.no,`${fmtDate(a.date)} (after ${b.no} on ${fmtDate(b.date)})`])});}
+  const pd={};S.sales.forEach(v=>(v.diffs||[]).forEach(d=>{if(d.invKg===d.xlKg&&d.invPrice!==d.xlPrice){const k=[d.ship||'fcl-001',d.item,d.invPrice,d.xlPrice].join('|');(pd[k]=pd[k]||[]).push(v)}}));
+  const grouped=new Set();
+  Object.entries(pd).filter(([,a])=>a.length>=3).forEach(([k,a])=>{const [ship,item,ip,xp]=k.split('|');const it=C.sc[ship]?.items[item];const sh=S.shipments.find(z=>z.id===ship);
+    a.forEach(v=>grouped.add(v.id+'|'+item));
+    const eff=a.reduce((t,v)=>t+(v.lines||[]).filter(l=>l.item===item&&l.ship===ship).reduce((x,l)=>x+l.qty*(+xp-+ip),0),0);
+    add({key:`pricegroup:${k}`,sev:'check',inv:a.map(v=>v.id),title:`${sh?.code||''}: ${nm(it)} price is ${ip} on ${a.length} invoices but ${xp} in the report`,
+      why:`Every one of these original invoices charges ${ip}, while the sales report uses ${xp}. The report is probably wrong, which makes its total OMR ${f3(eff)} too high. The app uses the invoices.`,
+      facts:[['Fish',`${nm(it)}${it?.sku?' ('+it.sku+')':''}`],['Invoices',a.map(v=>v.no).join(', ')],['Report overstates by',`OMR ${f3(eff)}`]]});});
+  S.sales.filter(v=>(v.diffs||[]).some(d=>!grouped.has(v.id+'|'+d.item))).forEach(v=>{
+    const d=v.diffs.filter(x=>!grouped.has(v.id+'|'+x.item)).map(x=>{const i=C.sc[x.ship||'fcl-001']?.items[x.item];return [`${nm(i)||x.item}${S.shipments.length>1?' · '+(S.shipments.find(z=>z.id===(x.ship||'fcl-001'))?.code||''):''}`,`${x.invKg!==x.xlKg?`${f1(x.invKg)} kg (Excel ${f1(x.xlKg)})`:''}${x.invKg!==x.xlKg&&x.invPrice!==x.xlPrice?', ':''}${x.invPrice!==x.xlPrice?`price ${x.invPrice} (Excel ${x.xlPrice})`:''}`]});
+    add({key:`diff:${v.id}`,sev:'check',inv:[v.id],title:`${v.no}: original invoice differs from the ${v.refs?'Excel / container report':'Excel summary'}`,
+      why:`The app uses the original invoice (OMR ${f3(T(v))}). The Excel summary${v.refs?' / container report':''} showed OMR ${f3(v.excelTotal||0)}, a difference of OMR ${f3(T(v)-(v.excelTotal||0))}. Fix the Excel, or edit this invoice if the Excel was right.`,
+      facts:[['Invoice',v.no],['Date',v.date?fmtDate(v.date):'—'],['File',v.file||'—'],...d]});
+  });
+  const tdc=S.sales.filter(v=>v.tallyDate&&v.date);
+  const toISO=t=>{const m=String(t).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:''};
+  const conf=tdc.filter(v=>toISO(v.tallyDate)&&toISO(v.tallyDate)!==v.date);
+  if(conf.length) add({key:'tallydates',sev:'fix',inv:conf.map(v=>v.id),title:`${conf.length} invoices have a different date in the invoice tally`,
+    why:`The original invoices are dated ${[...new Set(conf.map(v=>fmtDate(v.date)))].join(', ')}, but the invoice tally sheet gives dates in ${[...new Set(conf.map(v=>toISO(v.tallyDate).slice(0,7)))].sort().join(', ')}. One of them is wrong. The app uses the invoice date. Ask which is right; fix it with Edit invoice if needed.`,
+    facts:conf.map(v=>[v.no,`invoice ${fmtDate(v.date)} · tally ${v.tallyDate}`])});
+  const tnd=S.sales.filter(v=>v.tallyDate&&!v.date);
+  if(tnd.length) add({key:'tallynodate',sev:'info',inv:tnd.map(v=>v.id),title:`${tnd.length} invoices only have a date from the tally sheet`,
+    why:'These invoices have no original yet. The tally sheet gives a date, but tally dates did not match the original invoices for 27–32, so they are not used. Add the real date when the invoice arrives.',
+    facts:tnd.map(v=>[v.no,`tally ${v.tallyDate}`])});
+  const ex=S.sales.filter(v=>v.source==='excel');
+  if(ex.length) add({key:'excelonly',sev:'check',inv:ex.map(v=>v.id),title:`${ex.length} sales have no original invoice yet`,
+    why:'These come only from the Excel summary or the container sales report, so they have no date and were not checked line by line. Ask for the original invoices and send them here.',
+    facts:[['Invoices',ex.map(v=>v.no).join(', ')],['Value',`OMR ${f3(ex.reduce((a,v)=>a+T(v),0))}`]]});
+  const nums=S.sales.map(invNum).filter(n=>n!=null).sort((a,b)=>a-b);
+  if(nums.length){const have=new Set(nums),gaps=[];for(let n=nums[0];n<=nums.at(-1);n++) if(!have.has(n)) gaps.push(n);
+    if(gaps.length) add({key:`gap:${gaps.join('-')}`,sev:'fix',title:`Invoice number${gaps.length>1?'s':''} ${gaps.join(', ')} missing`,
+      why:'The numbering skips these. Either the invoice was cancelled, or a sale is missing from the books. Ask which, and add it on the Sales invoices tab if it was a sale.',
+      facts:[['Missing',gaps.map(g=>'INV-'+String(g).padStart(3,'0')).join(', ')],['Range',`${nums[0]}–${nums.at(-1)}`]]});
+    const seen={};S.sales.forEach(v=>{const n=invNum(v);if(n!=null) (seen[n]=seen[n]||[]).push(v)});
+    Object.entries(seen).filter(([,a])=>a.length>1).forEach(([n,a])=>add({key:`dup:${n}`,sev:'fix',inv:a.map(v=>v.id),title:`Invoice number ${n} used twice`,why:'Two sales share one invoice number. One may be entered twice, which would double the sale.',facts:a.map(v=>[v.no,`OMR ${f3(T(v))} · ${v.date?fmtDate(v.date):'no date'}`])}));}
+  const noC=S.sales.filter(v=>!v.customer);
+  if(noC.length) add({key:'nocustomer',sev:'info',inv:noC.map(v=>v.id),title:`${noC.length} invoices have no customer name`,why:'Without names you cannot see who owes you money or who your best buyers are. Open an invoice below and use Edit invoice to add the name.',facts:[['Invoices',noC.slice(0,12).map(v=>v.no).join(', ')+(noC.length>12?` and ${noC.length-12} more`:'')]]});
+  const noD=S.sales.filter(v=>!v.date&&v.source!=='excel');
+  if(noD.length) add({key:'nodate',sev:'fix',inv:noD.map(v=>v.id),title:`${noD.length} invoices have no date`,why:'Monthly reports need a date on every invoice. Open each one and add the date.',facts:[['Invoices',noD.map(v=>v.no).join(', ')]]});
+  if(!partners().confirmed) add({key:'split',sev:'info',title:'Profit split between partners not confirmed',why:'The Accounts tab splits profit 50/50 between Rehan and Imran until you confirm the real split under Accounts, Partners.',facts:partners().list.map(p=>[p.name,p.share+'%'])});
+  S.entries.filter(e=>(e.type==='capital'||e.type==='drawing')&&!partners().byId[e.partner]).forEach(e=>add({key:`nopartner:${e.id}`,sev:'fix',title:`${e.type==='capital'?'Capital':'Drawing'} of OMR ${f3(+e.amount)} not assigned to a partner`,why:'Each partner needs their own capital account. Choose who put this money in (or took it out) on the Capital & expenses tab.',facts:[['Entry',e.note||''],['Amount',f3(+e.amount)]]}));
+  S.entries.filter(e=>/example/i.test(e.note||'')).forEach(e=>add({key:`example:${e.id}`,sev:'info',title:'Capital figure is an example',why:`OMR ${f3(+e.amount)} was entered as an example, not a real figure. Replace it with the money actually put in, on the Capital & expenses tab.`,facts:[['Entry',e.note||''],['Amount',f3(+e.amount)]]}));
+  return out;
+}
+let CK={filter:'open',armed:null};
+function revOf(k){return S.reviews.find(r=>r.id===safeKey(k))}
+function safeKey(k){return k.replace(/[^A-Za-z0-9_\-.~:@+]/g,'_').slice(0,190)}
+function vChecks(C){
+  const all=findIssues(C).map(x=>({...x,rev:revOf(x.key)}));
+  const open=all.filter(x=>!x.rev), shown=CK.filter==='open'?open:CK.filter==='done'?all.filter(x=>x.rev):all;
+  const order={fix:0,check:1,info:2}; shown.sort((a,b)=>order[a.sev]-order[b.sev]);
+  const lab={fix:'Needs fixing',check:'Double-check',info:'Good to know'};
+  const cards=shown.map(x=>{
+    const links=[...new Set(x.inv||[])].slice(0,60).map(id=>{const v=S.sales.find(s=>s.id===id);return v?`<button class="pill" data-goinv="${esc(id)}">${esc(v.no)}</button>`:''}).join('');
+    const fix=x.fix&&canWrite&&!x.rev?(x.fix.type==='credit'?`<span class="fixrow"><input type="number" step="0.001" placeholder="OMR" id="cr-${esc(x.fix.ship)}" aria-label="Credit amount"><button class="btn" data-fix="${esc(x.key)}">Record credit</button></span>`
+      :`<button class="btn" data-fix="${esc(x.key)}">${CK.armed===x.key?'Confirm: '+esc(x.fix.label):esc(x.fix.label)}</button>`):'';
+    return `<article class="issue sev-${x.sev}${x.rev?' done':''}">
+      <div class="row"><span class="chip ${x.sev==='fix'?'bad':x.sev==='check'?'warn':'ok'}">${lab[x.sev]}</span>${x.rev?`<span class="note">Checked ${esc((x.rev.at||'').slice(0,10))}${x.rev.note?' · '+esc(x.rev.note):''}</span>`:''}</div>
+      <h3>${x.title}</h3><p>${x.why}</p>
+      ${x.facts?.length?`<dl class="facts2">${x.facts.filter(([k])=>!(x.inv&&x.inv.length&&k==='Invoices')).map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(String(v))}</dd></div>`).join('')}</dl>`:''}
+      ${links?`<div class="pills">${links}</div>`:''}
+      ${canWrite?`<div class="row" style="justify-content:flex-start;gap:8px;margin-top:10px">${fix}${x.rev?`<button class="ghost" data-reopen="${esc(x.key)}">Reopen</button>`:`<button class="ghost" data-ok="${esc(x.key)}">Mark as checked</button>`}</div>`:''}
+    </article>`}).join('');
+  const cnt=k=>open.filter(x=>x.sev===k).length;
+  return `<section class="panel"><div class="row"><div><h2>Checks</h2><p class="sub">Everything that does not add up or should be double-checked. Fix it here, or mark it as checked once you have confirmed it.</p></div>
+    <div class="seg" role="group" aria-label="Show">${[['open',`Open (${open.length})`],['done',`Checked (${all.length-open.length})`],['all','All']].map(([k,t])=>`<button data-ckf="${k}" aria-pressed="${CK.filter===k}">${t}</button>`).join('')}</div></div>
+    <div class="kpis" style="margin:4px 0 0"><div class="kpi"><div class="l">Needs fixing</div><div class="v ${cnt('fix')?'neg':''}">${cnt('fix')}</div></div><div class="kpi"><div class="l">Double-check</div><div class="v">${cnt('check')}</div></div><div class="kpi"><div class="l">Good to know</div><div class="v">${cnt('info')}</div></div></div></section>
+    <div class="issues">${cards||'<section class="panel empty">Nothing to show here.</section>'}</div>`;
+}
+async function applyFix(key){
+  const x=findIssues(compute()).find(i=>i.key===key); if(!x||!x.fix) return;
+  const now=new Date().toISOString();
+  if(x.fix.type==='item'){
+    const v=clone(S.sales.find(s=>s.id===x.fix.inv)); const l=v.lines[x.fix.idx]; const from=l.item; l.item=x.fix.to;
+    v.edits=[...(v.edits||[]),{at:now,what:`Line ${x.fix.idx+1} changed from ${from} to ${x.fix.to} (Checks tab)`}]; await save('sales',v); return;
+  }
+  if(x.fix.type==='price'||x.fix.type==='kg'){
+    const v=clone(S.sales.find(s=>s.id===x.fix.inv)); const l=v.lines[x.fix.idx]; const f=x.fix.type==='price'?'price':'qty';
+    const from=l[f]; l[f]=x.fix.to; if(Math.abs((+v.received||0)-((v.lines||[]).reduce((a,q)=>a+q.qty*q.price,0)))>0) {}
+    v.edits=[...(v.edits||[]),{at:now,what:`${x.fix.type==='price'?'Price':'Weight'} of ${l.item} changed from ${from} to ${x.fix.to} (Checks tab)`}];
+    if(Math.abs((+v.received||0)-(clone(S.sales.find(s=>s.id===x.fix.inv)).lines.reduce((a,q)=>a+q.qty*q.price,0)))<0.0005) v.received=Math.round(v.lines.reduce((a,q)=>a+q.qty*q.price,0)*1000)/1000;
+    await save('sales',v);
+  } else if(x.fix.type==='credit'){
+    const amt=parseFloat(document.getElementById('cr-'+x.fix.ship)?.value); if(!(amt>0)){toast('Enter the credit amount first');return;}
+    const d=clone(S.shipments.find(s=>s.id===x.fix.ship)); d.costs=[...(d.costs||[]),{id:uid('c'),label:'Supplier credit for short cartons',category:'supplier',amount:-amt}]; await save('shipments',d);
+    await markOk(key,`Credit OMR ${f3(amt)} recorded`);
+  }
+}
+async function markOk(key,note=''){ if(!db) return; try{await db.collection('reviews').doc(safeKey(key)).set({id:safeKey(key),key,status:'ok',note,at:new Date().toISOString()});toast('Marked as checked')}catch(e){handleErr(e)} }
+function vReports(C){
+  const r=(l,v,cls='')=>`<tr class="${cls}"><td>${l}</td><td class="n ${cls.includes('sg')?sg(v):''}">${f3(v)}</td></tr>`;
+  const diff=C.assets-(C.loans+C.equity);
+  return `<div class="grid cols-2">
+  <section class="panel"><h2>Profit &amp; loss</h2><p class="sub">All shipments, all dates.</p>
+    <div class="tbl"><table class="stmt"><tbody>
+      <tr class="h"><td colspan="2">Income</td></tr>${r('Sales',C.revenue,'ind')}
+      <tr class="h"><td colspan="2">Cost of sales</td></tr>${r('Fish sold at landed cost',C.cogs,'ind')}
+      ${r('<b>Gross profit</b>',C.gross,'tot sg')}
+      <tr class="h"><td colspan="2">Expenses</td></tr>${C.fines?r('Customs fines and penalties',C.fines,'ind'):''}${S.entries.filter(e=>e.type==='expense').map(e=>r(esc(e.note||'Expense'),+e.amount,'ind')).join('')||(C.fines?'':r('None recorded',0,'ind'))}
+      ${r('Net profit',C.net,'grand sg')}
+    </tbody></table></div>
+    <p class="note">Gross margin ${f1(C.revenue?C.gross/C.revenue*100:0)}% of sales.</p></section>
+  <section class="panel"><h2>Balance sheet</h2><p class="sub">What the business owns and owes today.</p>
+    <div class="tbl"><table class="stmt"><tbody>
+      <tr class="h"><td colspan="2">Assets</td></tr>
+      ${r('Cash and bank',C.cash,'ind')}${r('Customers owe you',C.ar,'ind')}${r('Fish in stock, at cost',C.inventory,'ind')}
+      ${r('Total assets',C.assets,'tot')}
+      <tr class="h"><td colspan="2">Liabilities</td></tr>${r('Loans',C.loans,'ind')}
+      <tr class="h"><td colspan="2">Owner's equity</td></tr>${r('Capital put in',C.capital,'ind')}${r('Profit kept in the business',C.net,'ind')}${r('Less drawings',-C.drawings,'ind')}
+      ${r('Total liabilities + equity',C.loans+C.equity,'grand')}
+    </tbody></table></div>
+    <p class="note">${Math.abs(diff)<0.01?'<span class="chip ok">Balanced</span> Assets equal liabilities plus equity.':`<span class="chip bad">Off by ${f3(diff)}</span>`}</p></section>
+  <section class="panel"><h2>Cash movement</h2><p class="sub">Where the cash came from and went.</p>
+    <div class="tbl"><table class="stmt"><tbody>
+      ${r('Capital and loans in',C.capital+C.loans,'ind')}${r('Paid from customers',C.received,'ind')}${r('Paid for containers (fish, freight, clearance)',-C.landed,'ind')}${C.fines?r('Customs fines paid',-C.fines,'ind'):''}${r('Running expenses',-C.expenses,'ind')}${r('Drawings',-C.drawings,'ind')}
+      ${r('Cash now',C.cash,'grand')}</tbody></table></div></section>
+  <section class="panel"><h2>Container results</h2><p class="sub">Each shipment on its own.</p>
+    <div class="tbl"><table><thead><tr><th>Container</th><th class="n">Landed cost</th><th class="n">Sales</th><th class="n">Gross profit</th><th class="n">Margin</th></tr></thead><tbody>
+    ${S.shipments.map(sh=>{let rv=0,cg=0;Object.entries(C.byItem).forEach(([k,b])=>{if(k.startsWith(sh.id+'|')){rv+=b.rev;cg+=b.cogs}});return `<tr><td>${esc(sh.code)}</td><td class="n">${f3(C.sc[sh.id].landed)}</td><td class="n">${f3(rv)}</td><td class="n ${sg(rv-cg)}">${f3(rv-cg)}</td><td class="n">${f1(rv?(rv-cg)/rv*100:0)}%</td></tr>`}).join('')}
+    </tbody></table></div></section>
+  </div>`;
+}
+
+/* ---------- double-entry accounts (generated from containers, invoices and the ledger) ---------- */
+const EXPCAT={rent:['6200','Rent and cold store'],transport:['6210','Transport and delivery'],salaries:['6220','Salaries and labour'],bank:['6230','Bank charges'],licence:['6240','Licences and fees'],other:['6290','Other expenses']};
+function partners(){
+  const doc=S.settings.find(x=>x.id==='partners');
+  const list=(doc?.list?.length?doc.list:[{id:'rehan',name:'Rehan',share:50},{id:'imran',name:'Imran',share:50}]);
+  const byId={};list.forEach(p=>byId[p.id]=p);
+  return {list,byId,confirmed:!!doc?.confirmed};
+}
+function chart(){
+  const P=partners();
+  const A=[
+    ['1000','Cash and bank','asset'],['1100','Customers owe (receivables)','asset'],['1200','Fish stock (inventory)','asset'],
+    ['2100','Loans','liability'],
+    ...P.list.map(p=>[`3000-${p.id}`,`Capital: ${p.name}`,'equity']),['3000-none','Capital: not yet assigned','equity'],
+    ...P.list.map(p=>[`3100-${p.id}`,`Drawings: ${p.name}`,'equity']),['3100-none','Drawings: not yet assigned','equity'],
+    ['4000','Sales: fish','income'],['5000','Cost of fish sold','cogs'],['6100','Customs fines and penalties','expense'],
+    ...Object.values(EXPCAT).map(([c,n])=>[c,n,'expense'])];
+  const by={};A.forEach(a=>by[a[0]]={code:a[0],name:a[1],type:a[2]});return {list:A.map(a=>by[a[0]]),by};
+}
+function journal(C){
+  const J=[];const r3=x=>Math.round(x*1000)/1000;
+  const je=(date,ref,memo,src,lines)=>{lines=lines.filter(l=>Math.abs(l[1])>0.0004||Math.abs(l[2])>0.0004);if(lines.length)J.push({date:date||'',ref,memo,src,lines:lines.map(([acc,dr,cr])=>({acc,dr:r3(dr),cr:r3(cr)}))});};
+  S.entries.forEach(e=>{const a=+e.amount||0, p=e.partner&&partners().byId[e.partner]?e.partner:'none';
+    if(e.type==='capital') je(e.date,'LED',e.note||'Capital in',{t:'entry',id:e.id},[['1000',a,0],[`3000-${p}`,0,a]]);
+    if(e.type==='loan') je(e.date,'LED',e.note||'Loan received',{t:'entry',id:e.id},[['1000',a,0],['2100',0,a]]);
+    if(e.type==='expense') je(e.date,'LED',e.note||'Expense',{t:'entry',id:e.id},[[EXPCAT[e.cat||'other']?.[0]||'6290',a,0],['1000',0,a]]);
+    if(e.type==='drawing') je(e.date,'LED',e.note||'Drawing',{t:'entry',id:e.id},[[`3100-${p}`,a,0],['1000',0,a]]);});
+  S.shipments.forEach(sh=>(sh.costs||[]).forEach(c=>{const a=+c.amount||0;const dr=c.category==='fine'?'6100':'1200';
+    je(c.date||sh.arrived,sh.code,c.label,{t:'ship',id:sh.id},a>=0?[[dr,a,0],['1000',0,a]]:[['1000',-a,0],[dr,0,-a]]);}));
+  C.invTotal.forEach(({inv,total,cogs})=>{
+    je(inv.date,inv.no,`Sale${inv.customer?' to '+inv.customer:''}`,{t:'sale',id:inv.id},[['1100',total,0],['4000',0,total]]);
+    je(inv.date,inv.no,'Cost of fish sold',{t:'sale',id:inv.id},[['5000',cogs,0],['1200',0,cogs]]);
+    const rc=Math.min(+inv.received||0,total); if(rc>0) je(inv.paidDate||inv.date,inv.no,'Payment received',{t:'receipt',id:inv.id},[['1000',rc,0],['1100',0,rc]]);});
+  return J;
+}
+function balances(J,filter){
+  const b={};J.forEach(e=>{if(filter&&!filter(e))return;e.lines.forEach(l=>{const x=b[l.acc]||(b[l.acc]={dr:0,cr:0});x.dr+=l.dr;x.cr+=l.cr;})});return b;
+}
+const natural=t=>(t==='asset'||t==='cogs'||t==='expense')?1:-1;
+let AC={view:'statements',period:'all',acc:'1000',q:''};
+function periodFilter(){return AC.period==='all'?null:(e=>e.date&&e.date.startsWith(AC.period));}
+function vAccounts(C){
+  const CH=chart(), J=journal(C), P=partners();
+  const months=[...new Set(J.map(e=>e.date.slice(0,7)).filter(Boolean))].sort();
+  const undated=J.filter(e=>!e.date).length;
+  const tabs=[['statements','Statements'],['tb','Trial balance'],['gl','General ledger'],['journal','Journal'],['partners','Partners'],['customers','Customers']];
+  const head=`<section class="panel"><div class="row"><div><h2>Accounts</h2><p class="sub">Double-entry books built automatically from your containers, invoices and ledger. Change the source data and the books follow.</p></div>
+    <label style="min-width:180px">Period<select id="acPeriod"><option value="all">All time</option>${months.map(m=>`<option value="${m}" ${AC.period===m?'selected':''}>${new Date(m+'-01T00:00').toLocaleString('en-GB',{month:'long',year:'numeric'})}</option>`).join('')}</select></label></div>
+    <div class="seg" role="tablist" style="flex-wrap:wrap;margin-top:6px">${tabs.map(([k,t])=>`<button data-acv="${k}" aria-pressed="${AC.view===k}">${t}</button>`).join('')}</div>
+    ${AC.period!=='all'&&undated?`<p class="note" style="margin:10px 0 0">${undated} journal entries have no date, so they only appear under All time. Add dates to invoices and costs to complete monthly figures.</p>`:''}</section>`;
+  const body={statements:acStatements,tb:acTB,gl:acGL,journal:acJournal,partners:acPartners,customers:acCustomers}[AC.view](C,CH,J,P);
+  return head+`<div style="margin-top:16px">${body}</div>`;
+}
+function amt(v){return `<td class="n ${v<-0.0005?'neg':''}">${f3(v)}</td>`}
+function acStatements(C,CH,J,P){
+  const pf=periodFilter(), b=balances(J,pf), ball=balances(J);
+  const net=(code,bb=b)=>{const x=bb[code]||{dr:0,cr:0};return (x.dr-x.cr)*natural(CH.by[code]?.type)};
+  const inc=CH.list.filter(a=>a.type==='income'), cg=CH.list.filter(a=>a.type==='cogs'), ex=CH.list.filter(a=>a.type==='expense');
+  const sum=(arr,bb=b)=>arr.reduce((a,x)=>a+net(x.code,bb),0);
+  const rev=sum(inc), cogs=sum(cg), gp=rev-cogs, opx=sum(ex), np=gp-opx;
+  const row=(n,v,c='ind')=>`<tr class="${c}"><td>${n}</td>${amt(v)}</tr>`;
+  const pl=`<section class="panel"><h2>Income statement</h2><p class="sub">${AC.period==='all'?'All time':esc($('#acPeriod')?.selectedOptions?.[0]?.textContent||AC.period)}</p><div class="tbl"><table class="stmt"><tbody>
+    <tr class="h"><td colspan="2">Revenue</td></tr>${inc.map(a=>row(`${a.code} ${a.name}`,net(a.code))).join('')}
+    <tr class="h"><td colspan="2">Cost of sales</td></tr>${cg.map(a=>row(`${a.code} ${a.name}`,net(a.code))).join('')}
+    ${row('<b>Gross profit</b>',gp,'tot')}<tr><td class="note">Gross margin</td><td class="n note">${f1(rev?gp/rev*100:0)}%</td></tr>
+    <tr class="h"><td colspan="2">Expenses</td></tr>${ex.filter(a=>Math.abs(net(a.code))>0.0005).map(a=>row(`${a.code} ${a.name}`,net(a.code))).join('')||row('None recorded',0)}
+    ${row('Net profit',np,'grand')}
+    <tr class="h"><td colspan="2">Profit share</td></tr>${P.list.map(p=>row(`${esc(p.name)} (${p.share}%)`,np*p.share/100)).join('')}
+  </tbody></table></div>${P.confirmed?'':'<p class="note">Profit split is 50/50 until you confirm it on the Partners view.</p>'}</section>`;
+  // balance sheet always cumulative (all entries)
+  const asset=CH.list.filter(a=>a.type==='asset'), liab=CH.list.filter(a=>a.type==='liability');
+  const capA=CH.list.filter(a=>a.code.startsWith('3000')), drA=CH.list.filter(a=>a.code.startsWith('3100'));
+  const allNP=sum(inc,ball)-sum(cg,ball)-sum(ex,ball);
+  const TA=sum(asset,ball), TL=sum(liab,ball), TE=sum(capA,ball)+sum(drA,ball)+allNP;
+  const bs=`<section class="panel"><h2>Balance sheet</h2><p class="sub">As of today, all entries</p><div class="tbl"><table class="stmt"><tbody>
+    <tr class="h"><td colspan="2">Assets</td></tr>${asset.map(a=>row(`${a.code} ${a.name}`,net(a.code,ball))).join('')}${row('Total assets',TA,'tot')}
+    <tr class="h"><td colspan="2">Liabilities</td></tr>${liab.map(a=>row(`${a.code} ${a.name}`,net(a.code,ball))).join('')}${row('Total liabilities',TL,'tot')}
+    <tr class="h"><td colspan="2">Partners' equity</td></tr>${capA.filter(a=>Math.abs(net(a.code,ball))>0.0005||!a.code.endsWith('none')).map(a=>row(`${a.code} ${a.name}`,net(a.code,ball))).join('')}
+    ${drA.filter(a=>Math.abs(net(a.code,ball))>0.0005).map(a=>row(`${a.code} ${a.name}`,net(a.code,ball))).join('')}${row('Profit to date (not yet split)',allNP)}${row('Total equity',TE,'tot')}
+    ${row('Total liabilities and equity',TL+TE,'grand')}
+  </tbody></table></div><p class="note">${Math.abs(TA-TL-TE)<0.01?'<span class="chip ok">Balanced</span> Assets equal liabilities plus equity.':`<span class="chip bad">Out by ${f3(TA-TL-TE)}</span>`}</p></section>`;
+  // cash flow (direct) from cash account lines
+  const cf={};J.forEach(e=>{if(pf&&!pf(e))return;e.lines.filter(l=>l.acc==='1000').forEach(l=>{const other=e.lines.find(x=>x.acc!=='1000')?.acc||'';
+    const k=e.src.t==='receipt'?'Received from customers':other==='1200'?'Paid for fish and import costs':other==='6100'?'Customs fines paid':other.startsWith('6')?'Operating expenses paid':other.startsWith('3000')?'Capital put in':other.startsWith('3100')?'Drawings taken':other==='2100'?'Loans received':'Other';
+    cf[k]=(cf[k]||0)+l.dr-l.cr;})});
+  const order=['Received from customers','Paid for fish and import costs','Customs fines paid','Operating expenses paid','Capital put in','Loans received','Drawings taken','Other'];
+  const cft=Object.values(cf).reduce((a,v)=>a+v,0);
+  const cfs=`<section class="panel"><h2>Cash flow</h2><p class="sub">${AC.period==='all'?'All time':'Selected month'}</p><div class="tbl"><table class="stmt"><tbody>
+    <tr class="h"><td colspan="2">Trading</td></tr>${order.slice(0,4).filter(k=>cf[k]).map(k=>row(k,cf[k])).join('')}
+    <tr class="h"><td colspan="2">Financing</td></tr>${order.slice(4).filter(k=>cf[k]).map(k=>row(k,cf[k])).join('')||row('None',0)}
+    ${row('Net change in cash',cft,'grand')}</tbody></table></div></section>`;
+  return `<div class="grid cols-2">${pl}${bs}${cfs}</div>`;
+}
+function acTB(C,CH,J){
+  const b=balances(J,periodFilter());let td=0,tc=0;
+  const rows=CH.list.filter(a=>b[a.code]).map(a=>{const x=b[a.code],n=x.dr-x.cr;const d=n>0?n:0,c=n<0?-n:0;td+=d;tc+=c;
+    return `<tr><td><button class="link" data-acgl="${a.code}">${a.code}</button></td><td>${esc(a.name)}</td><td>${a.type}</td><td class="n">${d?f3(d):''}</td><td class="n">${c?f3(c):''}</td></tr>`}).join('');
+  return `<section class="panel"><h2>Trial balance</h2><p class="sub">Every account's balance. Debits must equal credits.</p><div class="tbl"><table><thead><tr><th>Code</th><th>Account</th><th>Type</th><th class="n">Debit</th><th class="n">Credit</th></tr></thead>
+    <tbody>${rows}<tr class="tot"><td colspan="3">Total</td><td class="n">${f3(td)}</td><td class="n">${f3(tc)}</td></tr></tbody></table></div>
+    <p class="note">${Math.abs(td-tc)<0.01?'<span class="chip ok">Balanced</span> Debits equal credits.':`<span class="chip bad">Out by ${f3(td-tc)}</span>`}</p></section>`;
+}
+function refBtn(e){return e.src.t==='sale'||e.src.t==='receipt'?`<button class="link" data-goinv="${esc(e.src.id)}">${esc(e.ref)}</button>`:esc(e.ref)}
+function acGL(C,CH,J){
+  const pf=periodFilter(), a=CH.by[AC.acc]||CH.list[0];
+  let run=0;const sorted=J.filter(e=>(!pf||pf(e))&&e.lines.some(l=>l.acc===a.code)).sort((x,y)=>(x.date||'9999').localeCompare(y.date||'9999'));
+  const rows=sorted.map(e=>{const l=e.lines.filter(l=>l.acc===a.code).reduce((s,l)=>({dr:s.dr+l.dr,cr:s.cr+l.cr}),{dr:0,cr:0});run+=(l.dr-l.cr)*natural(a.type);
+    return `<tr><td>${e.date?fmtDate(e.date):'—'}</td><td>${refBtn(e)}</td><td>${esc(e.memo)}</td><td class="n">${l.dr?f3(l.dr):''}</td><td class="n">${l.cr?f3(l.cr):''}</td>${amt(run)}</tr>`}).join('');
+  return `<section class="panel"><div class="row"><div><h2>General ledger</h2><p class="sub">Every movement on one account, with a running balance.</p></div>
+    <label style="min-width:260px">Account<select id="acAcc">${CH.list.map(x=>`<option value="${x.code}" ${x.code===a.code?'selected':''}>${x.code} ${esc(x.name)}</option>`).join('')}</select></label></div>
+    <div class="tbl"><table><thead><tr><th>Date</th><th>Ref</th><th>Description</th><th class="n">Debit</th><th class="n">Credit</th><th class="n">Balance</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="empty">No movements in this period.</td></tr>'}</tbody></table></div></section>`;
+}
+function acJournal(C,CH,J){
+  const pf=periodFilter(), q=AC.q.trim().toLowerCase();
+  const list=J.filter(e=>(!pf||pf(e))&&(!q||[e.ref,e.memo,e.date,...e.lines.map(l=>CH.by[l.acc]?.name||l.acc)].join(' ').toLowerCase().includes(q)));
+  const rows=list.slice(0,400).map((e,i)=>e.lines.map((l,k)=>`<tr${k===0?' class="jfirst"':''}><td>${k===0?(e.date?fmtDate(e.date):'—'):''}</td><td>${k===0?refBtn(e):''}</td><td>${k===0?esc(e.memo):''}</td><td>${l.cr?'&emsp;':''}${l.acc} ${esc(CH.by[l.acc]?.name||'')}</td><td class="n">${l.dr?f3(l.dr):''}</td><td class="n">${l.cr?f3(l.cr):''}</td></tr>`).join('')).join('');
+  return `<section class="panel"><div class="row"><div><h2>Journal</h2><p class="sub">${list.length} entries. Each one has equal debits and credits.</p></div>
+    <label style="min-width:240px">Search<input id="acQ" type="search" value="${esc(AC.q)}" placeholder="Invoice, account, description"></label></div>
+    <div class="tbl"><table><thead><tr><th>Date</th><th>Ref</th><th>Description</th><th>Account</th><th class="n">Debit</th><th class="n">Credit</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="empty">No entries.</td></tr>'}</tbody></table></div>
+    ${list.length>400?'<p class="note">Showing the first 400 entries. Search to narrow down.</p>':''}</section>`;
+}
+function acPartners(C,CH,J,P){
+  const b=balances(J);const nb=c=>{const x=b[c]||{dr:0,cr:0};return x.cr-x.dr};
+  const np=(()=>{let r=0;CH.list.forEach(a=>{const x=b[a.code];if(!x)return;if(a.type==='income')r+=x.cr-x.dr;if(a.type==='cogs'||a.type==='expense')r-=x.dr-x.cr;});return r})();
+  const total=P.list.reduce((a,p)=>a+(+p.share||0),0);
+  const rows=P.list.map(p=>{const cap=nb(`3000-${p.id}`),dr=-nb(`3100-${p.id}`),sh=np*p.share/100;return `<tr><td>${esc(p.name)}</td><td class="n">${p.share}%</td><td class="n">${f3(cap)}</td><td class="n">${f3(sh)}</td><td class="n">${f3(dr)}</td>${amt(cap+sh-dr)}</tr>`}).join('');
+  const un=nb('3000-none');
+  return `<div class="grid cols-2"><section class="panel"><h2>Partners' capital</h2><p class="sub">What each partner has put in, their share of profit, what they took out, and what the business owes them.</p>
+    <div class="tbl"><table><thead><tr><th>Partner</th><th class="n">Share</th><th class="n">Capital in</th><th class="n">Profit share</th><th class="n">Drawings</th><th class="n">Balance</th></tr></thead><tbody>${rows}
+    ${Math.abs(un)>0.0005?`<tr><td colspan="2">Not yet assigned</td><td class="n">${f3(un)}</td><td></td><td></td>${amt(un)}</tr>`:''}</tbody></table></div>
+    ${Math.abs(un)>0.0005?'<p class="note">Some capital is not assigned to a partner. Assign it on the Capital &amp; expenses tab.</p>':''}</section>
+    <section class="panel"><h2>Partners and profit split</h2><p class="sub">${P.confirmed?'Confirmed split.':'Assumed 50/50. Change the names or shares and save to confirm.'}</p>
+    ${canWrite?`<form class="entry" id="partnerForm">${P.list.map((p,i)=>`<label>Partner ${i+1}<input class="pName" value="${esc(p.name)}" data-id="${esc(p.id)}" required></label><label>Share %<input class="pShare" type="number" step="0.01" min="0" max="100" value="${p.share}" required></label>`).join('')}
+      <button class="btn">Save split</button></form><p class="note">Shares must add up to 100. Now: ${total}%.</p>`:`<p>${P.list.map(p=>`${esc(p.name)} ${p.share}%`).join(' · ')}</p>`}</section></div>`;
+}
+function acCustomers(C){
+  const today=new Date().toISOString().slice(0,10);const day=d=>d?Math.floor((Date.parse(today)-Date.parse(d))/864e5):null;
+  const rows=C.invTotal.map(({inv,total})=>({inv,total,paid:Math.min(+inv.received||0,total)})).map(r=>({...r,due:r.total-r.paid,age:day(r.inv.date)}));
+  const open=rows.filter(r=>r.due>0.0005);
+  const by={};rows.forEach(r=>{const k=r.inv.customer||'Not recorded';const x=by[k]||(by[k]={n:0,sales:0,due:0});x.n++;x.sales+=r.total;x.due+=r.due});
+  const bucket=a=>a==null?'No date':a<=30?'0–30 days':a<=60?'31–60 days':a<=90?'61–90 days':'Over 90 days';
+  const ag={};open.forEach(r=>{const k=bucket(r.age);ag[k]=(ag[k]||0)+r.due});
+  return `<div class="grid cols-2"><section class="panel"><h2>Customers</h2><p class="sub">Sales and what is still owed, by customer.</p><div class="tbl"><table><thead><tr><th>Customer</th><th class="n">Invoices</th><th class="n">Sales</th><th class="n">Owed</th></tr></thead><tbody>
+    ${Object.entries(by).sort((a,b)=>b[1].sales-a[1].sales).map(([k,x])=>`<tr><td>${esc(k)}</td><td class="n">${x.n}</td><td class="n">${f3(x.sales)}</td>${amt(x.due)}</tr>`).join('')}</tbody></table></div>
+    ${by['Not recorded']?'<p class="note">Add customer names with Edit invoice in the Invoice archive to see who buys most and who owes what.</p>':''}</section>
+    <section class="panel"><h2>Unpaid invoices by age</h2><p class="sub">${open.length?`${open.length} unpaid invoices, OMR ${f3(open.reduce((a,r)=>a+r.due,0))}.`:'Every invoice is marked as paid.'}</p>
+    ${open.length?`<div class="tbl"><table><tbody>${['0–30 days','31–60 days','61–90 days','Over 90 days','No date'].filter(k=>ag[k]).map(k=>`<tr><td>${k}</td>${amt(ag[k])}</tr>`).join('')}</tbody></table></div>
+    <div class="tbl" style="margin-top:10px"><table><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th class="n">Days</th><th class="n">Owed</th></tr></thead><tbody>${open.sort((a,b)=>(b.age??-1)-(a.age??-1)).map(r=>`<tr><td><button class="link" data-goinv="${esc(r.inv.id)}">${esc(r.inv.no)}</button></td><td>${r.inv.date?fmtDate(r.inv.date):'—'}</td><td>${esc(r.inv.customer||'—')}</td><td class="n">${r.age??'—'}</td>${amt(r.due)}</tr>`).join('')}</tbody></table></div>`:'<p class="note">Payment status was not in the Excel, so all invoices start as paid. Use Mark unpaid on the Sales invoices tab for any that are still owed.</p>'}</section></div>`;
+}
+
+/* ---------- render + events ---------- */
+function render(){
+  const C=compute();
+  const v={overview:vOverview,shipments:vShipments,sales:vSales,archive:vArchive,checks:vChecks,money:vMoney,reports:vReports,accounts:vAccounts}[tab];
+  $('#view').innerHTML=v(C);
+  try{const n=findIssues(C).filter(x=>!revOf(x.key)&&x.sev!=='info').length;const b=$('#ckBadge');b.textContent=n||'';b.hidden=!n;}catch(e){}
+  if(tab==='sales'&&canWrite){const box=$('#saleLines');box.insertAdjacentHTML('beforeend',lineRow(C));}
+}
+document.querySelector('#tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-tab]'); if(!b) return;
+  tab=b.dataset.tab; document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  try{localStorage.setItem('fib-tab',tab)}catch{}
+  render();
+});
+
+async function save(col,doc){ if(!db) return; try{ await db.collection(col).doc(doc.id).set(doc); toast('Saved'); }catch(e){ handleErr(e) } }
+async function remove(col,id){ if(!db) return; try{ await db.collection(col).doc(id).delete(); toast('Removed'); }catch(e){ handleErr(e) } }
+const num=id=>parseFloat($(id).value);
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+$('#view').addEventListener('change',e=>{ if(e.target.id==='shipPick'){openShip=e.target.value;render();}
+  if(e.target.id==='acPeriod'){AC.period=e.target.value;render();return;}
+  if(e.target.id==='acAcc'){AC.acc=e.target.value;render();return;}
+  if(e.target.classList.contains('assignP')&&e.target.value){const en=clone(S.entries.find(x=>x.id===e.target.dataset.entry));en.partner=e.target.value;save('entries',en);return;}
+  if(['aFrom','aTo','aSrc'].includes(e.target.id)){AQ.from=$('#aFrom').value;AQ.to=$('#aTo').value;AQ.src=$('#aSrc').value;$('#archOut').innerHTML=archiveResults(compute());} });
+$('#view').addEventListener('input',e=>{ if(e.target.id==='acQ'){AC.q=e.target.value;clearTimeout(AC.t);AC.t=setTimeout(()=>{render();const q=$('#acQ');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},250);return;}
+  if(e.target.id==='aQ'){AQ.q=e.target.value;$('#archOut').innerHTML=archiveResults(compute());} });
+$('#view').addEventListener('click',e=>{
+  const t=e.target.closest('button'); if(!t) return;
+  if(t.dataset.tabgo){tab=t.dataset.tabgo;document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));render();return;}
+  if(t.dataset.acv){AC.view=t.dataset.acv;render();return;}
+  if(t.dataset.acgl){AC.acc=t.dataset.acgl;AC.view='gl';render();return;}
+  if(t.dataset.ckf){CK.filter=t.dataset.ckf;render();return;}
+  if(t.dataset.ok){markOk(t.dataset.ok);return;}
+  if(t.dataset.reopen){remove('reviews',safeKey(t.dataset.reopen));return;}
+  if(t.dataset.fix){const k=t.dataset.fix,x=findIssues(compute()).find(i=>i.key===k);if(x?.fix?.type==='credit'){applyFix(k);return;} if(CK.armed===k){CK.armed=null;applyFix(k);}else{CK.armed=k;render();}return;}
+  if(t.dataset.goinv){AQ.open=t.dataset.goinv;AQ.edit=false;AQ.q='';AQ.from='';AQ.to='';AQ.src='';tab='archive';document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab==='archive'));render();window.scrollTo(0,0);return;}
+  if(t.dataset.invEdit){AQ.edit=true;$('#archOut').innerHTML=archiveResults(compute());return;}
+  if(t.dataset.invCancel){AQ.edit=false;$('#archOut').innerHTML=archiveResults(compute());return;}
+  if(t.dataset.invSave){const v=clone(S.sales.find(s=>s.id===t.dataset.invSave));const before=clone(v);const now=new Date().toISOString();const ch=[];
+    const dt=$('#eDt').value,cu=$('#eCust').value.trim();if(dt!==(v.date||'')){ch.push(`Date ${v.date||'blank'} → ${dt||'blank'}`);v.date=dt}if(cu!==(v.customer||'')){ch.push(`Customer ${v.customer||'blank'} → ${cu||'blank'}`);v.customer=cu}
+    document.querySelectorAll('.eQty').forEach(el=>{const i=+el.dataset.i,n=parseFloat(el.value);if(!isNaN(n)&&n!==v.lines[i].qty){ch.push(`${v.lines[i].item} qty ${v.lines[i].qty} → ${n}`);v.lines[i].qty=n}});
+    document.querySelectorAll('.ePrice').forEach(el=>{const i=+el.dataset.i,n=parseFloat(el.value);if(!isNaN(n)&&n!==v.lines[i].price){ch.push(`${v.lines[i].item} price ${v.lines[i].price} → ${n}`);v.lines[i].price=n}});
+    if(!ch.length){AQ.edit=false;$('#archOut').innerHTML=archiveResults(compute());return;}
+    const oldT=before.lines.reduce((a,q)=>a+q.qty*q.price,0);if(Math.abs((+before.received||0)-oldT)<0.0005) v.received=Math.round(v.lines.reduce((a,q)=>a+q.qty*q.price,0)*1000)/1000;
+    v.edits=[...(v.edits||[]),...ch.map(w=>({at:now,what:w}))];AQ.edit=false;save('sales',v);return;}
+  if(t.dataset.arch){AQ.edit=false;AQ.open=t.dataset.arch;$('#archOut').innerHTML=archiveResults(compute());if(window.innerWidth<900){const el=document.querySelector('.invsheet');el&&el.scrollIntoView({block:'start'});}return;}
+  if(t.dataset.archClose){AQ.open=null;AQ.edit=false;$('#archOut').innerHTML=archiveResults(compute());return;}
+  if(t.dataset.toggle){const id=t.dataset.toggle; openInv.has(id)?openInv.delete(id):openInv.add(id); render(); return;}
+  if(t.id==='addLine'){$('#saleLines').insertAdjacentHTML('beforeend',lineRow(compute()));return;}
+  if(t.classList.contains('lDel')){const box=$('#saleLines'); if(box.children.length>1) t.closest('.line').remove(); return;}
+  if(t.dataset.delSale){ if(t.dataset.armed){remove('sales',t.dataset.delSale)} else {t.dataset.armed=1;t.textContent='Confirm delete';} return; }
+  if(t.dataset.delEntry){ remove('entries',t.dataset.delEntry); return; }
+  if(t.dataset.pay){ e.preventDefault(); const inv=clone(S.sales.find(s=>s.id===t.dataset.pay)); const tot=(inv.lines||[]).reduce((a,l)=>a+l.qty*l.price,0);
+    inv.received=(+inv.received||0)>=tot-0.0005?0:Math.round(tot*1000)/1000; save('sales',inv); return; }
+  const sh=S.shipments.find(s=>s.id===openShip);
+  if(t.dataset.delCost&&sh){ const d=clone(sh); d.costs=d.costs.filter(c=>c.id!==t.dataset.delCost); save('shipments',d); return; }
+  if(t.dataset.delItem&&sh){ if(!t.dataset.armed){t.dataset.armed=1;t.textContent='Confirm';return;} const d=clone(sh); d.items=d.items.filter(i=>i.id!==t.dataset.delItem); save('shipments',d); return; }
+});
+$('#view').addEventListener('submit',e=>{
+  e.preventDefault(); const f=e.target;
+  if(f.id==='costForm'){ const d=clone(S.shipments.find(s=>s.id===openShip)); d.costs=[...(d.costs||[]),{id:uid('c'),label:$('#cLabel').value.trim(),category:$('#cCat').value,amount:num('#cAmt')}]; save('shipments',d); }
+  if(f.id==='itemForm'){ const d=clone(S.shipments.find(s=>s.id===openShip)); d.items=[...(d.items||[]),{id:uid('i'),product:$('#iProd').value.trim(),sku:$('#iSku').value.trim(),size:$('#iSize').value.trim(),cartonKg:20,invMC:num('#iInvMC'),invKg:num('#iInvKg'),priceUSD:num('#iUSD'),recMC:num('#iRecMC'),recKg:num('#iRecKg'),targetMC:num('#iTarget')||0}]; save('shipments',d); }
+  if(f.id==='shipForm'){ const id=uid('ship'); openShip=id; save('shipments',{id,code:$('#sCode').value.trim(),origin:$('#sOrigin').value.trim(),supplier:$('#sSup').value.trim(),arrived:$('#sDate').value,fx:num('#sFx')||0.388,invoiceUSD:num('#sInv')||0,paidUSD:num('#sPaid')||0,plannedCostPerMC:num('#sPlan')||0,items:[],costs:[]}); }
+  if(f.id==='partnerForm'){const names=[...document.querySelectorAll('.pName')],shares=[...document.querySelectorAll('.pShare')].map(x=>parseFloat(x.value)||0);
+    if(Math.abs(shares.reduce((a,b)=>a+b,0)-100)>0.001){toast('Shares must add up to 100');return;}
+    save('settings',{id:'partners',confirmed:true,list:names.map((n,i)=>({id:n.dataset.id,name:n.value.trim(),share:shares[i]}))});return;}
+  if(f.id==='entryForm'){ {const ty=$('#eType').value;const d={id:uid('e'),type:ty,date:$('#eDate').value,amount:num('#eAmt'),note:$('#eNote').value.trim()};if(ty==='capital'||ty==='drawing')d.partner=$('#ePartner').value;if(ty==='expense')d.cat=$('#eCat').value;save('entries',d);} }
+  if(f.id==='saleForm'){
+    const lines=[...document.querySelectorAll('#saleLines .line')].map(r=>{const [ship,item]=r.querySelector('.lItem').value.split('|');return {ship,item,qty:parseFloat(r.querySelector('.lQty').value),unit:r.querySelector('.lUnit').value,price:parseFloat(r.querySelector('.lPrice').value)}}).filter(l=>l.qty&&l.price>=0);
+    if(!lines.length){toast('Add at least one fish line');return;}
+    const tot=lines.reduce((a,l)=>a+l.qty*l.price,0); const rv=$('#sRcv').value;
+    save('sales',{id:uid('inv'),source:'app',no:$('#sNo').value.trim(),date:$('#sDt').value,customer:$('#sCust').value.trim(),lines,received:rv===''?Math.round(tot*1000)/1000:parseFloat(rv)});
+  }
+});
+
+/* ---------- boot: Supabase (live) or demo (this browser only) ---------- */
+try{const t=localStorage.getItem('fib-tab'); if(t&&['overview','shipments','sales','archive','checks','money','reports','accounts'].includes(t)){tab=t;document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===t))}}catch{}
+const CFG=window.FIB_CONFIG||{}; const LIVE=!!(CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY&&window.supabase);
+let sb=null, ME=null, ORG=null, ROLE=null, MEMBERS=[];
+const COLLS={shipments:(a,b)=>String(a.code).localeCompare(String(b.code)),sales:(a,b)=>String(a.no).localeCompare(String(b.no),undefined,{numeric:true}),entries:(a,b)=>String(a.date).localeCompare(String(b.date)),reviews:()=>0,settings:()=>0};
+
+function makeStore(backend){ // same API the app already uses: collection().onSnapshot / doc().set / doc().delete
+  const subs={}, cache={};
+  const emit=c=>(subs[c]||[]).forEach(f=>f({docs:[...(cache[c]||new Map()).values()].map(d=>({data:()=>d}))}));
+  const api={reload:async c=>{cache[c]=await backend.load(c);emit(c)},
+    apply:(c,id,v)=>{(cache[c]=cache[c]||new Map());v==null?cache[c].delete(id):cache[c].set(id,v);emit(c)},
+    collection:c=>({onSnapshot:(f,err)=>{(subs[c]=subs[c]||[]).push(f);if(cache[c])emit(c);else api.reload(c).catch(e=>err&&err(e));return()=>{}},
+      doc:id=>({set:async v=>{await backend.set(c,id,v);api.apply(c,id,v)},delete:async()=>{await backend.del(c,id);api.apply(c,id,null)}})})};
+  return api;
+}
+function localBackend(){
+  const K='fib-demo-v1'; let data=null;
+  const read=async()=>{if(data) return data; try{data=JSON.parse(localStorage.getItem(K)||'null')}catch{} if(!data){const d=await (await fetch('seed.json')).json();data={};['shipments','sales','entries'].forEach(c=>{data[c]={};d[c].forEach(x=>data[c][x.id]=x)});}return data};
+  const write=()=>{try{localStorage.setItem(K,JSON.stringify(data))}catch{}};
+  return {load:async c=>new Map(Object.entries((await read())[c]||{})),set:async(c,id,v)=>{await read();(data[c]=data[c]||{})[id]=v;write()},del:async(c,id)=>{await read();delete (data[c]||{})[id];write()}};
+}
+function supaBackend(){
+  return {load:async c=>{const out=new Map();let from=0;for(;;){const {data,error}=await sb.from('records').select('id,data').eq('org_id',ORG.id).eq('coll',c).range(from,from+999);if(error) throw error;data.forEach(r=>out.set(r.id,r.data));if(data.length<1000) break;from+=1000;}return out},
+    set:async(c,id,v)=>{const {error}=await sb.from('records').upsert({org_id:ORG.id,coll:c,id,data:v});if(error) throw error},
+    del:async(c,id)=>{const {error}=await sb.from('records').delete().eq('org_id',ORG.id).eq('coll',c).eq('id',id);if(error) throw error}};
+}
+function startApp(){
+  db=makeStore(LIVE?supaBackend():localBackend());
+  Object.keys(S).forEach(k=>S[k]=[]);
+  Object.entries(COLLS).forEach(([c,sort])=>db.collection(c).onSnapshot(snap=>{S[c]=snap.docs.map(d=>d.data()).sort(sort);render();maybeOfferStarter();},e=>toast('Could not load data: '+(e.message||e))));
+  if(LIVE){
+    sb.channel('rec-'+ORG.id).on('postgres_changes',{event:'*',schema:'public',table:'records',filter:'org_id=eq.'+ORG.id},p=>{const r=p.eventType==='DELETE'?p.old:p.new;if(!r||!r.coll) return;db.apply(r.coll,r.id,p.eventType==='DELETE'?null:r.data);}).subscribe();
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden) Object.keys(COLLS).forEach(c=>db.reload(c).catch(()=>{}))});
+  }
+  $('#gate').hidden=true; $('#app').hidden=false; setStatus(); render();
+}
+function setStatus(){
+  const s=$('#status');
+  if(!LIVE){s.className='status demo';s.textContent='Demo mode · saved in this browser only';canWrite=true;return;}
+  s.className='status live';s.textContent=`${ORG?.name||''} · ${ROLE||''}`;
+  $('#me').textContent=ME?.email||'';
+}
+function handleErr(e){const m=String(e?.message||e||'');if(/row-level security|permission|42501/i.test(m)){toast('You can view these books but not change them');}else toast('Could not save: '+m.slice(0,80));}
+let starterOffered=false;
+function maybeOfferStarter(){
+  if(starterOffered||!canWrite) return;
+  if(S.shipments.length||S.sales.length||S.entries.length) return;
+  starterOffered=true; fetch('seed.json',{method:'HEAD'}).then(r=>{if(r.ok) $('#starter').hidden=false;}).catch(()=>{});
+}
+async function loadStarter(){
+  const btn=$('#starterGo'); btn.disabled=true; btn.textContent='Loading…';
+  try{const d=await (await fetch('seed.json')).json();
+    for(const c of ['shipments','sales','entries']) for(const x of d[c]) await db.collection(c).doc(x.id).set(x);
+    $('#starter').hidden=true; toast('Containers 1 and 2 loaded');
+  }catch(e){handleErr(e);btn.disabled=false;btn.textContent='Load Containers 1 and 2';}
+}
+function downloadBackup(){
+  const out={exported:new Date().toISOString(),business:ORG?.name||'Demo',data:S};
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,1)],{type:'application/json'}));
+  a.download=`fish-books-backup-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+}
+/* ----- sign in, business, team ----- */
+function gate(view,msg=''){
+  $('#app').hidden=true; $('#gate').hidden=false;
+  document.querySelectorAll('#gate [data-view]').forEach(x=>x.hidden=x.dataset.view!==view);
+  $('#gateMsg').textContent=msg; $('#gateMsg').hidden=!msg;
+}
+async function afterSignIn(){
+  const {data:{user}}=await sb.auth.getUser(); ME=user; if(!user){gate('signin');return;}
+  await sb.rpc('accept_invites');
+  const {data:mem,error}=await sb.from('members').select('org_id,role,orgs(id,name)').eq('user_id',user.id);
+  if(error){gate('signin','Could not load your business: '+error.message);return;}
+  if(!mem.length){gate('neworg');return;}
+  let pick=null;try{pick=localStorage.getItem('fib-org')}catch{}
+  const m=mem.find(x=>x.org_id===pick)||mem[0];
+  ORG=m.orgs; ROLE=m.role; canWrite=ROLE==='owner'||ROLE==='editor';
+  const sel=$('#orgPick'); sel.innerHTML=mem.map(x=>`<option value="${esc(x.org_id)}" ${x.org_id===ORG.id?'selected':''}>${esc(x.orgs.name)}</option>`).join(''); sel.hidden=mem.length<2;
+  $('#teamBtn').hidden=ROLE!=='owner';
+  startApp();
+}
+async function openTeam(){
+  const {data:mem}=await sb.from('members').select('user_id,role,email').eq('org_id',ORG.id);
+  const {data:inv}=await sb.from('invites').select('email,role').eq('org_id',ORG.id);
+  MEMBERS=mem||[];
+  const roleSel=(v,attr)=>`<select ${attr}>${['owner','editor','viewer'].map(r=>`<option ${r===v?'selected':''}>${r}</option>`).join('')}</select>`;
+  $('#teamBody').innerHTML=`<div class="tbl"><table><thead><tr><th>Person</th><th>Role</th><th></th></tr></thead><tbody>
+    ${MEMBERS.map(m=>`<tr><td>${esc(m.email||m.user_id)}${m.user_id===ME.id?' (you)':''}</td><td>${m.user_id===ME.id?esc(m.role):roleSel(m.role,`data-role-for="${esc(m.user_id)}"`)}</td><td>${m.user_id===ME.id?'':`<button class="ghost" data-remove-member="${esc(m.user_id)}">Remove</button>`}</td></tr>`).join('')}
+    ${(inv||[]).map(i=>`<tr><td>${esc(i.email)} <span class="chip warn">Invited</span></td><td>${esc(i.role)}</td><td><button class="ghost" data-cancel-invite="${esc(i.email)}">Cancel</button></td></tr>`).join('')}
+    </tbody></table></div>`;
+  $('#team').hidden=false;
+}
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('button'); if(!t) return;
+  if(t.id==='starterGo'){loadStarter();}
+  if(t.id==='starterNo'){$('#starter').hidden=true;}
+  if(t.id==='backupBtn'){downloadBackup();}
+  if(t.id==='signOut'){await sb.auth.signOut();location.reload();}
+  if(t.id==='teamBtn'){openTeam();}
+  if(t.id==='teamClose'){$('#team').hidden=true;}
+  if(t.dataset.removeMember){await sb.from('members').delete().eq('org_id',ORG.id).eq('user_id',t.dataset.removeMember);openTeam();}
+  if(t.dataset.cancelInvite){await sb.from('invites').delete().eq('org_id',ORG.id).eq('email',t.dataset.cancelInvite);openTeam();}
+  if(t.dataset.gateView){gate(t.dataset.gateView);}
+});
+document.addEventListener('change',async e=>{
+  if(e.target.id==='orgPick'){try{localStorage.setItem('fib-org',e.target.value)}catch{}location.reload();}
+  if(e.target.dataset.roleFor){await sb.from('members').update({role:e.target.value}).eq('org_id',ORG.id).eq('user_id',e.target.dataset.roleFor);toast('Role updated');}
+});
+document.addEventListener('submit',async e=>{
+  const f=e.target; if(!['signinForm','signupForm','resetForm','newpassForm','neworgForm','inviteForm'].includes(f.id)) return;
+  e.preventDefault(); const v=id=>f.querySelector(id).value.trim();
+  try{
+    if(f.id==='signinForm'){const {error}=await sb.auth.signInWithPassword({email:v('[name=email]'),password:f.querySelector('[name=password]').value});if(error) throw error;await afterSignIn();}
+    if(f.id==='signupForm'){const {data,error}=await sb.auth.signUp({email:v('[name=email]'),password:f.querySelector('[name=password]').value,options:{emailRedirectTo:location.origin+location.pathname}});if(error) throw error;
+      if(data.session) await afterSignIn(); else gate('signin','Account created. Check your email for a confirmation link, then sign in.');}
+    if(f.id==='resetForm'){const {error}=await sb.auth.resetPasswordForEmail(v('[name=email]'),{redirectTo:location.origin+location.pathname});if(error) throw error;gate('signin','If that email has an account, a reset link is on its way.');}
+    if(f.id==='newpassForm'){const {error}=await sb.auth.updateUser({password:f.querySelector('[name=password]').value});if(error) throw error;await afterSignIn();}
+    if(f.id==='neworgForm'){const {error}=await sb.rpc('create_org',{org_name:v('[name=org]')});if(error) throw error;await afterSignIn();}
+    if(f.id==='inviteForm'){const em=v('[name=email]').toLowerCase();const {error}=await sb.from('invites').insert({org_id:ORG.id,email:em,role:f.querySelector('[name=role]').value});if(error) throw error;f.reset();toast('Invited. They sign up with '+em);openTeam();}
+  }catch(err){$('#gateMsg').textContent=err.message||String(err);$('#gateMsg').hidden=false;if(f.id==='inviteForm')toast(err.message);}
+});
+(async()=>{
+  if('serviceWorker' in navigator&&location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if(!LIVE){ mode='demo'; $('#me').textContent='Demo'; $('#signOut').hidden=true; $('#teamBtn').hidden=true; startApp(); return; }
+  sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY);
+  mode='live';
+  sb.auth.onAuthStateChange((ev)=>{ if(ev==='PASSWORD_RECOVERY') gate('newpass'); });
+  const {data:{session}}=await sb.auth.getSession();
+  if(session) await afterSignIn(); else gate('signin');
+})();
+</script>
+
+</body>
+</html>

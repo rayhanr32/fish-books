@@ -1,0 +1,4 @@
+window.FIB_CONFIG = {
+  SUPABASE_URL: "https://hamgaggrdgsuibvzopca.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhbWdhZ2dyZGdzdWlidnpvcGNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5ODgwMDksImV4cCI6MjEwNzU2NDAwOX0.NinW7J4YBwvwGxAaxRbE5-194R5YgC_uKpFh7zLOXig"
+};
